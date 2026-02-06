@@ -40,7 +40,7 @@ export function ActivityCard({
           <Badge className={ACTIVITY_STATUS_COLORS[status]}>{status}</Badge>
         </div>
         <div className="space-y-1 text-sm text-muted-foreground">
-          <p>{format(new Date(date), "dd MMM yyyy")}</p>
+          <p>{date ? format(new Date(date), "dd MMM yyyy") : "—"}</p>
           {siteName && <p>Site: {siteName}</p>}
           {createdByName && <p>By: {createdByName}</p>}
         </div>

@@ -41,7 +41,7 @@ export function ApprovalCard({
         <div className="space-y-1 text-sm">
           <p className="font-medium">{siteName}</p>
           <p className="text-muted-foreground">
-            {format(new Date(date), "dd MMM yyyy")}
+            {date ? format(new Date(date), "dd MMM yyyy") : "—"}
           </p>
           <p className="text-muted-foreground">By: {createdByName}</p>
         </div>

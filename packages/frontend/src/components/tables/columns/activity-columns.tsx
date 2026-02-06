@@ -16,7 +16,10 @@ export const activityColumns: ColumnDef<ActivitySummary>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Date" />
     ),
-    cell: ({ row }) => format(new Date(row.getValue("activityDate")), "dd MMM yyyy"),
+    cell: ({ row }) => {
+      const d = row.getValue("activityDate");
+      return d ? format(new Date(d as string), "dd MMM yyyy") : "—";
+    },
   },
   {
     accessorKey: "activityType",

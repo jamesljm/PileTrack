@@ -22,7 +22,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ siteI
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold">{ACTIVITY_TYPE_LABELS[activity.activityType as ActivityType]}</h1>
-          <p className="text-muted-foreground">{format(new Date(activity.activityDate), "dd MMM yyyy")}</p>
+          <p className="text-muted-foreground">{activity.activityDate ? format(new Date(activity.activityDate), "dd MMM yyyy") : "—"}</p>
         </div>
         <Badge className={ACTIVITY_STATUS_COLORS[activity.status as ActivityStatus]}>{activity.status}</Badge>
       </div>
