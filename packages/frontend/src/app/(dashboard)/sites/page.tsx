@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useSites } from "@/queries/use-sites";
 import { SiteCard } from "@/components/cards/site-card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CardsSkeleton } from "@/components/shared/loading-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { SiteStatus } from "@piletrack/shared";
+import Link from "next/link";
 
 export default function SitesPage() {
   const [search, setSearch] = useState("");
@@ -23,7 +25,10 @@ export default function SitesPage() {
 
   return (
     <div className="space-y-6">
-      <div><h1 className="text-2xl font-bold">Sites</h1><p className="text-muted-foreground">Manage your construction sites</p></div>
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold">Sites</h1><p className="text-muted-foreground">Manage your construction sites</p></div>
+        <Link href="/sites/new"><Button><Plus className="mr-2 h-4 w-4" />New Site</Button></Link>
+      </div>
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -65,7 +65,7 @@ export default function AdminUserDetailPage({
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "users", userId],
-    queryFn: () => api.get<ApiResponse<User>>(`/admin/users/${userId}`),
+    queryFn: () => api.get<ApiResponse<User>>(`/users/${userId}`),
     enabled: !!userId,
   });
 
@@ -87,7 +87,7 @@ export default function AdminUserDetailPage({
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateUserFormValues) =>
-      api.patch<ApiResponse<User>>(`/admin/users/${userId}`, data),
+      api.patch<ApiResponse<User>>(`/users/${userId}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       toast({
@@ -105,7 +105,7 @@ export default function AdminUserDetailPage({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => api.delete<void>(`/admin/users/${userId}`),
+    mutationFn: () => api.delete<void>(`/users/${userId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       toast({
@@ -126,7 +126,7 @@ export default function AdminUserDetailPage({
   const resetPasswordMutation = useMutation({
     mutationFn: () =>
       api.post<ApiResponse<{ message: string }>>(
-        `/admin/users/${userId}/reset-password`,
+        `/users/${userId}/reset-password`,
       ),
     onSuccess: () => {
       toast({
