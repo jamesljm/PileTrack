@@ -65,7 +65,7 @@ services:
       pnpm --filter @piletrack/shared build &&
       pnpm --filter @piletrack/frontend build
     startCommand: pnpm --filter @piletrack/frontend start -- -H 0.0.0.0 -p $PORT
-    healthCheckPath: /
+    healthCheckPath: /login
     envVars:
       - key: NODE_ENV
         value: production
