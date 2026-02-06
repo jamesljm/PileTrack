@@ -64,7 +64,7 @@ services:
       pnpm install --frozen-lockfile --prod=false &&
       pnpm --filter @piletrack/shared build &&
       pnpm --filter @piletrack/frontend build
-    startCommand: pnpm --filter @piletrack/frontend start
+    startCommand: pnpm --filter @piletrack/frontend start -- -H 0.0.0.0 -p $PORT
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
