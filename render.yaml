@@ -11,10 +11,11 @@ services:
     plan: free
     buildCommand: |
       corepack enable &&
-      pnpm install --frozen-lockfile &&
+      NODE_ENV=development pnpm install --frozen-lockfile --ignore-scripts &&
       pnpm --filter @piletrack/shared build &&
       pnpm --filter @piletrack/backend db:generate &&
-      pnpm --filter @piletrack/backend build
+      pnpm --filter @piletrack/backend build &&
+      pnpm --filter @piletrack/backend db:migrate
     startCommand: node packages/backend/dist/index.js
     healthCheckPath: /api/v1/health
     envVars:
@@ -60,7 +61,7 @@ services:
     plan: free
     buildCommand: |
       corepack enable &&
-      pnpm install --frozen-lockfile &&
+      NODE_ENV=development pnpm install --frozen-lockfile --ignore-scripts &&
       pnpm --filter @piletrack/shared build &&
       pnpm --filter @piletrack/frontend build
     startCommand: pnpm --filter @piletrack/frontend start
