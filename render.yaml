@@ -38,13 +38,13 @@ services:
           name: piletrack-redis
           type: redis
           property: connectionString
-      - key: JWT_SECRET
+      - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
-      - key: JWT_ACCESS_EXPIRY
+      - key: JWT_ACCESS_EXPIRES_IN
         value: 15m
-      - key: JWT_REFRESH_EXPIRY
+      - key: JWT_REFRESH_EXPIRES_IN
         value: 7d
       - key: CORS_ORIGINS
         sync: false # Set manually after frontend deploys
