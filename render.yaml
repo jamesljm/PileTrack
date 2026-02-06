@@ -15,7 +15,8 @@ services:
       pnpm --filter @piletrack/shared build &&
       pnpm --filter @piletrack/backend db:generate &&
       pnpm --filter @piletrack/backend build &&
-      pnpm --filter @piletrack/backend db:migrate
+      pnpm --filter @piletrack/backend db:migrate &&
+      pnpm --filter @piletrack/backend db:seed
     startCommand: node packages/backend/dist/index.js
     healthCheckPath: /health
     envVars:
