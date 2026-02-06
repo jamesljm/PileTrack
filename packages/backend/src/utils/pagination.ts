@@ -10,8 +10,10 @@ export interface PaginatedResult<T> {
   pagination: {
     page: number;
     pageSize: number;
-    total: number;
+    totalItems: number;
     totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
   };
 }
 
@@ -33,13 +35,16 @@ export function buildPaginatedResponse<T>(
   page: number,
   pageSize: number,
 ): PaginatedResult<T> {
+  const totalPages = Math.ceil(total / pageSize);
   return {
     data,
     pagination: {
       page,
       pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
+      totalItems: total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
     },
   };
 }

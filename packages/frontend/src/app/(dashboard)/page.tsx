@@ -21,10 +21,10 @@ export default function DashboardPage() {
   const { data: pendingData } = usePendingActivities();
   const { data: equipmentData } = useEquipment({ pageSize: 1 });
 
-  const totalSites = sitesData?.pagination?.total ?? 0;
-  const totalActivitiesToday = activitiesData?.pagination?.total ?? 0;
-  const pendingApprovals = pendingData?.pagination?.total ?? 0;
-  const totalEquipment = equipmentData?.pagination?.total ?? 0;
+  const totalSites = sitesData?.pagination?.totalItems ?? 0;
+  const totalActivitiesToday = activitiesData?.pagination?.totalItems ?? 0;
+  const pendingApprovals = pendingData?.pagination?.totalItems ?? 0;
+  const totalEquipment = equipmentData?.pagination?.totalItems ?? 0;
 
   return (
     <div className="space-y-6">
