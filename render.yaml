@@ -89,7 +89,7 @@ services:
 databases:
   - name: piletrack-db
     region: singapore
-    plan: free
+    plan: basic
     databaseName: piletrack
     user: piletrack
     ipAllowList: [] # Only internal access
