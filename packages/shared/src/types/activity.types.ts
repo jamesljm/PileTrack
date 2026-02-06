@@ -5,46 +5,44 @@ import type { ActivityStatus, ActivityType } from "../enums";
  */
 export interface ActivityRecord {
   id: string;
-  clientId: string;
+  clientId: string | null;
   siteId: string;
   activityType: ActivityType;
   status: ActivityStatus;
-  date: string;
+  activityDate: string;
   details: Record<string, unknown>;
-  photos: Array<{
-    uri: string;
-    caption?: string;
-    takenAt?: string;
-  }>;
-  gpsLat: number | null;
-  gpsLng: number | null;
-  notes: string | null;
-  weather: {
-    condition: string;
-    temperatureCelsius?: number;
-    humidity?: number;
-    windSpeedKmh?: number;
-    rainfall?: number;
-  } | null;
+  photos: unknown[];
+  remarks: string | null;
+  weather: Record<string, unknown> | null;
   createdById: string;
   approvedById: string | null;
   approvedAt: string | null;
-  rejectionReason: string | null;
+  rejectionNotes: string | null;
+  version: number;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
+  // Included relations
+  createdBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  approvedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null;
+  site?: {
+    id: string;
+    name: string;
+    code: string;
+  };
 }
 
 /**
- * Lightweight activity representation for lists.
+ * Activity representation for lists (same shape as ActivityRecord with relations).
  */
-export interface ActivitySummary {
-  id: string;
-  clientId: string;
-  siteId: string;
-  siteName: string;
-  activityType: ActivityType;
-  status: ActivityStatus;
-  date: string;
-  createdByName: string;
-  createdAt: string;
-}
+export type ActivitySummary = ActivityRecord;

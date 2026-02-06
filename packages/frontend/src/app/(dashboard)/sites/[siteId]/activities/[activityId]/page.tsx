@@ -12,10 +12,14 @@ import type { ActivityType, ActivityStatus } from "@piletrack/shared";
 export default function ActivityDetailPage({ params }: { params: Promise<{ siteId: string; activityId: string }> }) {
   const { activityId } = use(params);
   const { data, isLoading } = useActivity(activityId);
-  const activity = data?.data;
+  const activity = data?.data as Record<string, any> | undefined;
 
   if (isLoading) return <FormSkeleton />;
   if (!activity) return <p className="text-center py-12 text-muted-foreground">Activity not found</p>;
+
+  const weather = activity.weather as Record<string, any> | null;
+  const details = (activity.details ?? {}) as Record<string, unknown>;
+  const photos = (activity.photos ?? []) as Array<{ uri?: string; caption?: string }>;
 
   return (
     <div className="space-y-6">
@@ -31,48 +35,51 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ siteI
         <Card>
           <CardHeader><CardTitle className="text-base">Details</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
-            {Object.entries(activity.details).map(([key, value]) => (
+            {Object.entries(details).map(([key, value]) => (
               <div key={key} className="flex justify-between"><span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, " $1")}</span><span className="font-medium">{String(value)}</span></div>
             ))}
           </CardContent>
         </Card>
 
         <div className="space-y-4">
-          {activity.weather && (
+          {weather && (
             <Card>
               <CardHeader><CardTitle className="text-base">Weather</CardTitle></CardHeader>
               <CardContent className="space-y-1 text-sm">
-                <p>Condition: {activity.weather.condition}</p>
-                {activity.weather.temperatureCelsius !== undefined && <p>Temperature: {activity.weather.temperatureCelsius}C</p>}
-                {activity.weather.humidity !== undefined && <p>Humidity: {activity.weather.humidity}%</p>}
+                {weather.condition && <p>Condition: {weather.condition}</p>}
+                {weather.temperatureCelsius !== undefined && <p>Temperature: {weather.temperatureCelsius}C</p>}
+                {weather.humidity !== undefined && <p>Humidity: {weather.humidity}%</p>}
               </CardContent>
             </Card>
           )}
 
-          {activity.gpsLat && activity.gpsLng && (
+          {activity.remarks && (
             <Card>
-              <CardHeader><CardTitle className="text-base">GPS Location</CardTitle></CardHeader>
-              <CardContent className="text-sm"><p>{activity.gpsLat.toFixed(6)}, {activity.gpsLng.toFixed(6)}</p></CardContent>
+              <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>
+              <CardContent className="text-sm"><p>{activity.remarks}</p></CardContent>
             </Card>
           )}
 
-          {activity.notes && (
+          {activity.site && (
             <Card>
-              <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>
-              <CardContent className="text-sm"><p>{activity.notes}</p></CardContent>
+              <CardHeader><CardTitle className="text-base">Site</CardTitle></CardHeader>
+              <CardContent className="text-sm">
+                <p className="font-medium">{activity.site.name}</p>
+                <p className="text-muted-foreground">{activity.site.code}</p>
+              </CardContent>
             </Card>
           )}
         </div>
       </div>
 
-      {activity.photos.length > 0 && (
+      {photos.length > 0 && (
         <Card>
-          <CardHeader><CardTitle className="text-base">Photos ({activity.photos.length})</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Photos ({photos.length})</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {activity.photos.map((photo, i) => (
+              {photos.map((photo, i) => (
                 <div key={i} className="rounded-md overflow-hidden border">
-                  <img src={photo.uri} alt={photo.caption ?? `Photo ${i + 1}`} className="w-full aspect-square object-cover" />
+                  {photo.uri && <img src={photo.uri} alt={photo.caption ?? `Photo ${i + 1}`} className="w-full aspect-square object-cover" />}
                   {photo.caption && <p className="text-xs p-2 text-muted-foreground">{photo.caption}</p>}
                 </div>
               ))}
