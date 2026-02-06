@@ -12,11 +12,11 @@ import { Eye } from "lucide-react";
 
 export const activityColumns: ColumnDef<ActivitySummary>[] = [
   {
-    accessorKey: "date",
+    accessorKey: "activityDate",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Date" />
     ),
-    cell: ({ row }) => format(new Date(row.getValue("date")), "dd MMM yyyy"),
+    cell: ({ row }) => format(new Date(row.getValue("activityDate")), "dd MMM yyyy"),
   },
   {
     accessorKey: "activityType",
@@ -49,13 +49,15 @@ export const activityColumns: ColumnDef<ActivitySummary>[] = [
     filterFn: (row, id, value) => value === row.getValue(id),
   },
   {
-    accessorKey: "siteName",
+    id: "siteName",
+    accessorFn: (row: any) => row.site?.name ?? "",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Site" />
     ),
   },
   {
-    accessorKey: "createdByName",
+    id: "createdByName",
+    accessorFn: (row: any) => row.createdBy ? `${row.createdBy.firstName} ${row.createdBy.lastName}` : "",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Created By" />
     ),

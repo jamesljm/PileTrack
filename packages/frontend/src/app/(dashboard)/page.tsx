@@ -21,10 +21,10 @@ export default function DashboardPage() {
   const { data: pendingData } = usePendingActivities();
   const { data: equipmentData } = useEquipment({ pageSize: 1 });
 
-  const totalSites = sitesData?.pagination?.totalItems ?? 0;
-  const totalActivitiesToday = activitiesData?.pagination?.totalItems ?? 0;
-  const pendingApprovals = pendingData?.pagination?.totalItems ?? 0;
-  const totalEquipment = equipmentData?.pagination?.totalItems ?? 0;
+  const totalSites = sitesData?.pagination?.total ?? 0;
+  const totalActivitiesToday = activitiesData?.pagination?.total ?? 0;
+  const pendingApprovals = pendingData?.pagination?.total ?? 0;
+  const totalEquipment = equipmentData?.pagination?.total ?? 0;
 
   return (
     <div className="space-y-6">
@@ -56,15 +56,15 @@ export default function DashboardPage() {
             <CardsSkeleton count={3} />
           ) : activitiesData?.data?.length ? (
             <div className="space-y-3">
-              {activitiesData.data.slice(0, 5).map((activity) => (
+              {activitiesData.data.slice(0, 5).map((activity: any) => (
                 <ActivityCard
                   key={activity.id}
                   id={activity.id}
                   activityType={activity.activityType as ActivityType}
                   status={activity.status as ActivityStatus}
-                  date={activity.date}
-                  siteName={activity.siteName}
-                  createdByName={activity.createdByName}
+                  date={activity.activityDate}
+                  siteName={activity.site?.name}
+                  createdByName={activity.createdBy ? `${activity.createdBy.firstName} ${activity.createdBy.lastName}` : undefined}
                   onClick={() => router.push(`/sites/${activity.siteId}/activities/${activity.id}`)}
                 />
               ))}

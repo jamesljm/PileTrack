@@ -42,7 +42,7 @@ export default function ApprovalsPage() {
       {isLoading ? <CardsSkeleton count={4} /> : data?.data?.length ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {data.data.map((activity) => (
-            <ApprovalCard key={activity.id} id={activity.id} activityType={activity.activityType as ActivityType} date={activity.date} siteName={activity.siteName} createdByName={activity.createdByName} onApprove={setApprovalId} onReject={setRejectionId} />
+            <ApprovalCard key={activity.id} id={activity.id} activityType={(activity as any).activityType as ActivityType} date={(activity as any).activityDate} siteName={(activity as any).site?.name} createdByName={(activity as any).createdBy ? `${(activity as any).createdBy.firstName} ${(activity as any).createdBy.lastName}` : undefined} onApprove={setApprovalId} onReject={setRejectionId} />
           ))}
         </div>
       ) : <EmptyState icon={CheckSquare} title="No pending approvals" description="All activities have been reviewed." />}

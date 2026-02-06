@@ -102,12 +102,12 @@ export function ActivityFormWrapper({
       clientId: crypto.randomUUID(),
       siteId,
       activityType: common.activityType,
-      date: new Date(common.date),
+      activityDate: new Date(common.date),
       details,
       photos,
       gpsLat: gps?.lat,
       gpsLng: gps?.lng,
-      notes: common.notes,
+      remarks: common.notes,
       weather: weather ?? undefined,
     };
 
