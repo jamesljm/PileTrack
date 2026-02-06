@@ -17,7 +17,7 @@ services:
       pnpm --filter @piletrack/backend build &&
       pnpm --filter @piletrack/backend db:migrate
     startCommand: node packages/backend/dist/index.js
-    healthCheckPath: /api/v1/health
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
