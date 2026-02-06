@@ -1,0 +1,16 @@
+name: Deploy Production
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Render (Production)
+        run: |
+          echo "Trigger Render deploy hook for production"
+          # curl -X POST "${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK }}"

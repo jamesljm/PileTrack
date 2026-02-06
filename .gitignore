@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build
+dist/
+.next/
+out/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+*.lcov
+
+# Turbo
+.turbo/
+
+# Prisma
+packages/backend/prisma/migrations/**/migration_lock.toml
+
+# Debug
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# Misc
+*.tsbuildinfo

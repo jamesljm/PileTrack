@@ -1,0 +1,4 @@
+* @geohan/engineering
+packages/backend/ @geohan/backend
+packages/frontend/ @geohan/frontend
+packages/shared/ @geohan/engineering

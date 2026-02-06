@@ -1,0 +1,96 @@
+# Render Blueprint — PileTrack PWA
+# Deploy: https://render.com/deploy
+# Region: Singapore (singapore)
+
+services:
+  # ─── Backend API ────────────────────────────────────────
+  - type: web
+    name: piletrack-api
+    runtime: node
+    region: singapore
+    plan: starter
+    buildCommand: |
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @piletrack/shared build &&
+      pnpm --filter @piletrack/backend db:generate &&
+      pnpm --filter @piletrack/backend build
+    startCommand: node packages/backend/dist/index.js
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: LOG_LEVEL
+        value: info
+      - key: DATABASE_URL
+        fromDatabase:
+          name: piletrack-db
+          property: connectionString
+      - key: DIRECT_URL
+        fromDatabase:
+          name: piletrack-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: piletrack-redis
+          type: redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRY
+        value: 15m
+      - key: JWT_REFRESH_EXPIRY
+        value: 7d
+      - key: CORS_ORIGINS
+        sync: false # Set manually after frontend deploys
+      - key: SENTRY_DSN
+        sync: false
+    autoDeploy: true
+    branch: main
+
+  # ─── Frontend (Next.js PWA) ─────────────────────────────
+  - type: web
+    name: piletrack-web
+    runtime: node
+    region: singapore
+    plan: starter
+    buildCommand: |
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @piletrack/shared build &&
+      pnpm --filter @piletrack/frontend build
+    startCommand: pnpm --filter @piletrack/frontend start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        sync: false # Set to https://piletrack-api.onrender.com/api/v1
+      - key: NEXT_PUBLIC_APP_NAME
+        value: PileTrack
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        sync: false
+    autoDeploy: true
+    branch: main
+
+  # ─── Redis ──────────────────────────────────────────────
+  - type: redis
+    name: piletrack-redis
+    region: singapore
+    plan: starter
+    ipAllowList: [] # Only internal access
+    maxmemoryPolicy: allkeys-lru
+
+# ─── PostgreSQL Database ─────────────────────────────────
+databases:
+  - name: piletrack-db
+    region: singapore
+    plan: starter
+    databaseName: piletrack
+    user: piletrack
+    ipAllowList: [] # Only internal access
+    postgresMajorVersion: "16"

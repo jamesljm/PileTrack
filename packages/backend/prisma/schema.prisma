@@ -1,0 +1,404 @@
+// ─── PileTrack Prisma Schema ─────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  WORKER
+  SUPERVISOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SiteStatus {
+  ACTIVE
+  INACTIVE
+  COMPLETED
+}
+
+enum ActivityType {
+  BORED_PILING
+  MICROPILING
+  DIAPHRAGM_WALL
+  SHEET_PILING
+  PILECAP
+  PILE_HEAD_HACKING
+  SOIL_NAILING
+  GROUND_ANCHOR
+  CAISSON_PILE
+}
+
+enum ActivityStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  DECOMMISSIONED
+}
+
+enum EquipmentCategory {
+  PILING_RIG
+  CRANE
+  EXCAVATOR
+  CONCRETE_PUMP
+  GENERATOR
+  COMPRESSOR
+  WELDING_MACHINE
+  SURVEYING
+  SAFETY
+  GENERAL
+}
+
+enum TransferStatus {
+  REQUESTED
+  APPROVED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum SyncAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum NotificationType {
+  ACTIVITY_SUBMITTED
+  ACTIVITY_APPROVED
+  ACTIVITY_REJECTED
+  TRANSFER_REQUESTED
+  TRANSFER_APPROVED
+  TRANSFER_DELIVERED
+  EQUIPMENT_SERVICE_DUE
+  LOW_STOCK_ALERT
+  SYSTEM
+}
+
+// ─── Models ─────────────────────────────────────────────────────────────────
+
+model User {
+  id             String     @id @default(uuid()) @db.Uuid
+  email          String     @unique @db.VarChar(255)
+  passwordHash   String     @map("password_hash") @db.VarChar(255)
+  firstName      String     @map("first_name") @db.VarChar(100)
+  lastName       String     @map("last_name") @db.VarChar(100)
+  phone          String?    @db.VarChar(20)
+  role           UserRole   @default(WORKER)
+  status         UserStatus @default(ACTIVE)
+  avatarUrl      String?    @map("avatar_url") @db.VarChar(500)
+  lastLoginAt    DateTime?  @map("last_login_at")
+  resetToken     String?    @map("reset_token") @db.VarChar(255)
+  resetTokenExp  DateTime?  @map("reset_token_exp")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+  deletedAt      DateTime?  @map("deleted_at")
+
+  // Relations
+  siteUsers      SiteUser[]
+  activities     ActivityRecord[] @relation("ActivityCreator")
+  approvals      ActivityRecord[] @relation("ActivityApprover")
+  transfersFrom  Transfer[]       @relation("TransferRequester")
+  transfersAppr  Transfer[]       @relation("TransferApprover")
+  refreshTokens  RefreshToken[]
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+  syncLogs       SyncLog[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Site {
+  id              String     @id @default(uuid()) @db.Uuid
+  name            String     @db.VarChar(200)
+  code            String     @unique @db.VarChar(50)
+  address         String     @db.VarChar(500)
+  clientName      String     @map("client_name") @db.VarChar(200)
+  contractNumber  String?    @map("contract_number") @db.VarChar(100)
+  gpsLat          Float?     @map("gps_lat")
+  gpsLng          Float?     @map("gps_lng")
+  status          SiteStatus @default(ACTIVE)
+  startDate       DateTime?  @map("start_date")
+  expectedEndDate DateTime?  @map("expected_end_date")
+  description     String?    @db.Text
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  deletedAt       DateTime?  @map("deleted_at")
+
+  // Relations
+  siteUsers       SiteUser[]
+  activities      ActivityRecord[]
+  equipment       Equipment[]
+  materials       Material[]
+  transfersFrom   Transfer[] @relation("TransferFromSite")
+  transfersTo     Transfer[] @relation("TransferToSite")
+
+  @@index([code])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("sites")
+}
+
+model SiteUser {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  siteId    String   @map("site_id") @db.Uuid
+  siteRole  String?  @map("site_role") @db.VarChar(50)
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, siteId])
+  @@index([userId])
+  @@index([siteId])
+  @@map("site_users")
+}
+
+model ActivityRecord {
+  id             String         @id @default(uuid()) @db.Uuid
+  siteId         String         @map("site_id") @db.Uuid
+  activityType   ActivityType   @map("activity_type")
+  status         ActivityStatus @default(DRAFT)
+  activityDate   DateTime       @map("activity_date") @db.Date
+  weather        Json?
+  details        Json           @default("{}")
+  remarks        String?        @db.Text
+  photos         Json?          @default("[]")
+  createdById    String         @map("created_by_id") @db.Uuid
+  approvedById   String?        @map("approved_by_id") @db.Uuid
+  approvedAt     DateTime?      @map("approved_at")
+  rejectionNotes String?        @map("rejection_notes") @db.Text
+  clientId       String?        @map("client_id") @db.VarChar(100)
+  version        Int            @default(1)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  deletedAt      DateTime?      @map("deleted_at")
+
+  // Relations
+  site        Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdBy   User @relation("ActivityCreator", fields: [createdById], references: [id])
+  approvedBy  User? @relation("ActivityApprover", fields: [approvedById], references: [id])
+
+  @@index([siteId])
+  @@index([activityType])
+  @@index([status])
+  @@index([activityDate])
+  @@index([createdById])
+  @@index([clientId])
+  @@index([deletedAt])
+  @@map("activity_records")
+}
+
+model Equipment {
+  id              String            @id @default(uuid()) @db.Uuid
+  siteId          String?           @map("site_id") @db.Uuid
+  name            String            @db.VarChar(200)
+  category        EquipmentCategory @default(GENERAL)
+  serialNumber    String?           @unique @map("serial_number") @db.VarChar(100)
+  qrCode          String?           @unique @map("qr_code") @db.VarChar(255)
+  status          EquipmentStatus   @default(AVAILABLE)
+  manufacturer    String?           @db.VarChar(200)
+  model           String?           @db.VarChar(200)
+  yearManufactured Int?             @map("year_manufactured")
+  lastServiceDate DateTime?         @map("last_service_date")
+  nextServiceDate DateTime?         @map("next_service_date")
+  serviceHistory  Json?             @default("[]") @map("service_history")
+  notes           String?           @db.Text
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  deletedAt       DateTime?         @map("deleted_at")
+
+  // Relations
+  site          Site?          @relation(fields: [siteId], references: [id])
+  transferItems TransferItem[]
+
+  @@index([siteId])
+  @@index([category])
+  @@index([status])
+  @@index([qrCode])
+  @@index([serialNumber])
+  @@index([nextServiceDate])
+  @@index([deletedAt])
+  @@map("equipment")
+}
+
+model Material {
+  id              String    @id @default(uuid()) @db.Uuid
+  siteId          String    @map("site_id") @db.Uuid
+  name            String    @db.VarChar(200)
+  unit            String    @db.VarChar(50)
+  currentStock    Float     @default(0) @map("current_stock")
+  minimumStock    Float     @default(0) @map("minimum_stock")
+  unitPrice       Float?    @default(0) @map("unit_price")
+  supplier        String?   @db.VarChar(200)
+  stockHistory    Json?     @default("[]") @map("stock_history")
+  notes           String?   @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  site          Site           @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  transferItems TransferItem[]
+
+  @@index([siteId])
+  @@index([name])
+  @@index([deletedAt])
+  @@map("materials")
+}
+
+model Transfer {
+  id             String         @id @default(uuid()) @db.Uuid
+  fromSiteId     String         @map("from_site_id") @db.Uuid
+  toSiteId       String         @map("to_site_id") @db.Uuid
+  status         TransferStatus @default(REQUESTED)
+  requestedById  String         @map("requested_by_id") @db.Uuid
+  approvedById   String?        @map("approved_by_id") @db.Uuid
+  approvedAt     DateTime?      @map("approved_at")
+  shippedAt      DateTime?      @map("shipped_at")
+  deliveredAt    DateTime?      @map("delivered_at")
+  cancelledAt    DateTime?      @map("cancelled_at")
+  notes          String?        @db.Text
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  deletedAt      DateTime?      @map("deleted_at")
+
+  // Relations
+  fromSite     Site           @relation("TransferFromSite", fields: [fromSiteId], references: [id])
+  toSite       Site           @relation("TransferToSite", fields: [toSiteId], references: [id])
+  requestedBy  User           @relation("TransferRequester", fields: [requestedById], references: [id])
+  approvedBy   User?          @relation("TransferApprover", fields: [approvedById], references: [id])
+  items        TransferItem[]
+
+  @@index([fromSiteId])
+  @@index([toSiteId])
+  @@index([status])
+  @@index([requestedById])
+  @@index([deletedAt])
+  @@map("transfers")
+}
+
+model TransferItem {
+  id           String  @id @default(uuid()) @db.Uuid
+  transferId   String  @map("transfer_id") @db.Uuid
+  equipmentId  String? @map("equipment_id") @db.Uuid
+  materialId   String? @map("material_id") @db.Uuid
+  quantity     Float?
+  notes        String? @db.Text
+
+  // Relations
+  transfer  Transfer   @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  equipment Equipment? @relation(fields: [equipmentId], references: [id])
+  material  Material?  @relation(fields: [materialId], references: [id])
+
+  @@index([transferId])
+  @@index([equipmentId])
+  @@index([materialId])
+  @@map("transfer_items")
+}
+
+model SyncLog {
+  id          String     @id @default(uuid()) @db.Uuid
+  userId      String     @map("user_id") @db.Uuid
+  clientId    String     @map("client_id") @db.VarChar(100)
+  action      SyncAction
+  entityType  String     @map("entity_type") @db.VarChar(50)
+  entityId    String     @map("entity_id") @db.VarChar(100)
+  payload     Json
+  appliedAt   DateTime   @default(now()) @map("applied_at")
+  serverVersion Int      @default(autoincrement()) @map("server_version")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([clientId])
+  @@index([entityType, entityId])
+  @@index([appliedAt])
+  @@index([serverVersion])
+  @@map("sync_logs")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(50)
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String   @map("entity_id") @db.VarChar(100)
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.VarChar(500)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(200)
+  message   String           @db.Text
+  data      Json?
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([readAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique @db.VarChar(500)
+  expiresAt DateTime @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
