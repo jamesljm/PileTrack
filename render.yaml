@@ -11,7 +11,7 @@ services:
     plan: free
     buildCommand: |
       corepack enable &&
-      NODE_ENV=development pnpm install --frozen-lockfile --ignore-scripts &&
+      pnpm install --frozen-lockfile --prod=false &&
       pnpm --filter @piletrack/shared build &&
       pnpm --filter @piletrack/backend db:generate &&
       pnpm --filter @piletrack/backend build &&
@@ -61,7 +61,7 @@ services:
     plan: free
     buildCommand: |
       corepack enable &&
-      NODE_ENV=development pnpm install --frozen-lockfile --ignore-scripts &&
+      pnpm install --frozen-lockfile --prod=false &&
       pnpm --filter @piletrack/shared build &&
       pnpm --filter @piletrack/frontend build
     startCommand: pnpm --filter @piletrack/frontend start
