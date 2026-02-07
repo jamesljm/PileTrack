@@ -14,9 +14,8 @@ services:
       pnpm install --frozen-lockfile --prod=false &&
       pnpm --filter @piletrack/shared build &&
       pnpm --filter @piletrack/backend db:generate &&
-      pnpm --filter @piletrack/backend build &&
-      pnpm --filter @piletrack/backend db:migrate
-    startCommand: node packages/backend/dist/index.js
+      pnpm --filter @piletrack/backend build
+    startCommand: cd packages/backend && npx prisma migrate deploy && cd ../.. && node packages/backend/dist/index.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
