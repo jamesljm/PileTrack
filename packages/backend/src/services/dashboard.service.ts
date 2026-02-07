@@ -106,7 +106,7 @@ class DashboardService {
       alerts.push({
         type: "overdue_ncr",
         message: `${overdueNCRs.length} overdue NCR(s)`,
-        severity: "error",
+        severity: "warning",
       });
     }
 
@@ -114,7 +114,7 @@ class DashboardService {
       alerts.push({
         type: "critical_ncr",
         message: `${criticalNCRs} critical NCR(s) open`,
-        severity: "error",
+        severity: "critical",
       });
     }
 
