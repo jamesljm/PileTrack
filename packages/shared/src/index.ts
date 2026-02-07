@@ -14,6 +14,9 @@ export {
   NotificationType,
   HoldPointType,
   HoldPointStatus,
+  DailyLogStatus,
+  TestType,
+  TestResultStatus,
 } from "./enums";
 
 // ─── Schemas: Common ─────────────────────────────────────────────────────────
@@ -214,6 +217,15 @@ export type {
 } from "./types";
 export type { Material } from "./types";
 export type { Transfer, TransferItem, TransferWithItems } from "./types";
+export type {
+  DailyLog,
+  WorkforceEntry,
+  SafetyRecord,
+  DelayEntry,
+  MaterialUsageEntry,
+} from "./types";
+export type { BoreholeLog, StratumEntry, SPTEntry } from "./types";
+export type { TestResult } from "./types";
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 export {

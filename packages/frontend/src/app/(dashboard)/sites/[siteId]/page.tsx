@@ -6,6 +6,9 @@ import { useActivities } from "@/queries/use-activities";
 import { useEquipment } from "@/queries/use-equipment";
 import { useMaterials } from "@/queries/use-materials";
 import { useUsers } from "@/queries/use-users";
+import { useDailyLogs } from "@/queries/use-daily-logs";
+import { useTestResults } from "@/queries/use-test-results";
+import { useBoreholeLogs } from "@/queries/use-borehole-logs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,13 +27,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SITE_STATUS_COLORS, ACTIVITY_TYPE_LABELS, EQUIPMENT_CATEGORY_LABELS } from "@/lib/constants";
+import {
+  SITE_STATUS_COLORS,
+  ACTIVITY_TYPE_LABELS,
+  EQUIPMENT_CATEGORY_LABELS,
+  DAILY_LOG_STATUS_COLORS,
+  TEST_TYPE_LABELS,
+  TEST_RESULT_STATUS_COLORS,
+} from "@/lib/constants";
 import { FormSkeleton, CardsSkeleton } from "@/components/shared/loading-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
-import { Plus, Activity, Wrench, Package, ArrowLeftRight, Users, Trash2, Loader2 } from "lucide-react";
-import type { SiteStatus, ActivityType, EquipmentCategory } from "@piletrack/shared";
+import { Plus, Activity, Wrench, Package, ArrowLeftRight, Users, Trash2, Loader2, ClipboardList, FlaskConical } from "lucide-react";
+import type { SiteStatus, ActivityType, EquipmentCategory, DailyLogStatus, TestType, TestResultStatus } from "@piletrack/shared";
 
 export default function SiteDetailPage({ params }: { params: Promise<{ siteId: string }> }) {
   const { siteId } = use(params);
@@ -41,6 +51,9 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
   const { data: materialsData, isLoading: materialsLoading } = useMaterials({ siteId, pageSize: 5 });
   const { data: siteUsersData, isLoading: siteUsersLoading } = useSiteUsers(siteId);
   const { data: allUsersData } = useUsers({ pageSize: 100 });
+  const { data: dailyLogsData, isLoading: dailyLogsLoading } = useDailyLogs({ siteId, pageSize: 5 });
+  const { data: testResultsData, isLoading: testResultsLoading } = useTestResults({ siteId, pageSize: 5 });
+  const { data: boreholeLogsData, isLoading: boreholeLogsLoading } = useBoreholeLogs({ siteId, pageSize: 5 });
   const site = data?.data;
 
   const assignUser = useAssignSiteUser(siteId);
@@ -102,9 +115,15 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
         <Link href={`/sites/${siteId}/activities/new`} className="col-span-2 md:col-span-1">
           <Button className="w-full h-9" size="sm"><Plus className="mr-1.5 h-4 w-4" />New Activity</Button>
+        </Link>
+        <Link href={`/sites/${siteId}/daily-logs/new`}>
+          <Button variant="outline" className="w-full h-9" size="sm"><ClipboardList className="mr-1.5 h-4 w-4" />Daily Log</Button>
+        </Link>
+        <Link href={`/sites/${siteId}/test-results/new`}>
+          <Button variant="outline" className="w-full h-9" size="sm"><FlaskConical className="mr-1.5 h-4 w-4" />Test Result</Button>
         </Link>
         <Link href={`/sites/${siteId}/equipment/new`}>
           <Button variant="outline" className="w-full h-9" size="sm"><Wrench className="mr-1.5 h-4 w-4" />Equipment</Button>
@@ -126,6 +145,8 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
           <TabsTrigger value="activities">Activities</TabsTrigger>
           <TabsTrigger value="equipment">Equipment</TabsTrigger>
           <TabsTrigger value="materials">Materials</TabsTrigger>
+          <TabsTrigger value="diary">Diary</TabsTrigger>
+          <TabsTrigger value="qc">QC & Geotech</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
         </TabsList>
 
@@ -239,6 +260,114 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
           <Link href={`/sites/${siteId}/materials/new`}>
             <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />Add Material</Button>
           </Link>
+        </TabsContent>
+
+        {/* Diary Tab */}
+        <TabsContent value="diary" className="mt-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Recent Daily Logs</h3>
+            <Link href={`/sites/${siteId}/daily-logs`}><Button variant="link" size="sm">View All</Button></Link>
+          </div>
+          {dailyLogsLoading ? <CardsSkeleton count={3} /> : dailyLogsData?.data?.length ? (
+            <div className="space-y-2">
+              {dailyLogsData.data.slice(0, 5).map((log: any) => {
+                const totalWorkforce = (log.workforce ?? []).reduce((s: number, w: any) => s + (w.headcount ?? 0), 0);
+                return (
+                  <Link key={log.id} href={`/sites/${siteId}/daily-logs/${log.id}`} className="block">
+                    <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">
+                          {new Date(log.logDate).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {totalWorkforce} pax
+                          {log.createdBy && ` - ${log.createdBy.firstName} ${log.createdBy.lastName}`}
+                        </p>
+                      </div>
+                      <Badge className={DAILY_LOG_STATUS_COLORS[log.status as DailyLogStatus] ?? ""}>{log.status}</Badge>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState title="No daily logs" description="Start recording daily site activities." />
+          )}
+          <Link href={`/sites/${siteId}/daily-logs/new`}>
+            <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Daily Log</Button>
+          </Link>
+        </TabsContent>
+
+        {/* QC & Geotech Tab */}
+        <TabsContent value="qc" className="mt-4 space-y-6">
+          {/* Test Results Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Recent Test Results</h3>
+              <Link href={`/sites/${siteId}/test-results`}><Button variant="link" size="sm">View All</Button></Link>
+            </div>
+            {testResultsLoading ? <CardsSkeleton count={3} /> : testResultsData?.data?.length ? (
+              <div className="space-y-2">
+                {testResultsData.data.slice(0, 5).map((result: any) => (
+                  <Link key={result.id} href={`/sites/${siteId}/test-results/${result.id}`} className="block">
+                    <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          {result.pileId && <span className="text-sm font-medium">{result.pileId}</span>}
+                          <Badge variant="outline" className="text-xs">
+                            {TEST_TYPE_LABELS[result.testType as TestType] ?? result.testType}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(result.testDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Badge className={TEST_RESULT_STATUS_COLORS[result.status as TestResultStatus] ?? ""}>{result.status}</Badge>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No test results" description="Record quality control test results." />
+            )}
+            <Link href={`/sites/${siteId}/test-results/new`}>
+              <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Test</Button>
+            </Link>
+          </div>
+
+          {/* Borehole Logs Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Borehole Logs</h3>
+              <Link href={`/sites/${siteId}/borehole-logs`}><Button variant="link" size="sm">View All</Button></Link>
+            </div>
+            {boreholeLogsLoading ? <CardsSkeleton count={3} /> : boreholeLogsData?.data?.length ? (
+              <div className="space-y-2">
+                {boreholeLogsData.data.slice(0, 5).map((bh: any) => (
+                  <Link key={bh.id} href={`/sites/${siteId}/borehole-logs/${bh.id}`} className="block">
+                    <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{bh.boreholeId}</Badge>
+                          <span className="text-sm font-medium">{bh.totalDepth}m depth</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(bh.logDate).toLocaleDateString()}
+                          {bh.location && ` - ${bh.location}`}
+                        </p>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{(bh.strata ?? []).length} layers</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No borehole logs" description="Record geotechnical investigation data." />
+            )}
+            <Link href={`/sites/${siteId}/borehole-logs/new`}>
+              <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Borehole Log</Button>
+            </Link>
+          </div>
         </TabsContent>
 
         {/* Team Tab */}

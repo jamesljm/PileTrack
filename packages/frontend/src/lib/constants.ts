@@ -9,6 +9,9 @@ import {
   SiteStatus,
   HoldPointType,
   HoldPointStatus,
+  DailyLogStatus,
+  TestType,
+  TestResultStatus,
 } from "@piletrack/shared";
 
 export const API_URL =
@@ -142,3 +145,56 @@ export const WEATHER_CONDITION_LABELS: Record<string, string> = {
   FOG: "Fog",
   HAZE: "Haze",
 };
+
+// ─── Daily Log ──────────────────────────────────────────────────────────────
+
+export const DAILY_LOG_STATUS_COLORS: Record<DailyLogStatus, string> = {
+  [DailyLogStatus.DRAFT]: "bg-gray-100 text-gray-800",
+  [DailyLogStatus.SUBMITTED]: "bg-blue-100 text-blue-800",
+  [DailyLogStatus.APPROVED]: "bg-green-100 text-green-800",
+  [DailyLogStatus.REJECTED]: "bg-red-100 text-red-800",
+};
+
+// ─── Test ───────────────────────────────────────────────────────────────────
+
+export const TEST_TYPE_LABELS: Record<TestType, string> = {
+  [TestType.PIT]: "Pile Integrity Test",
+  [TestType.STATIC_LOAD_TEST]: "Static Load Test",
+  [TestType.DYNAMIC_LOAD_TEST]: "Dynamic Load Test",
+  [TestType.CUBE_TEST]: "Cube Test",
+  [TestType.CORE_TEST]: "Core Test",
+  [TestType.KODEN]: "Koden Test",
+  [TestType.CROSSHOLE_SONIC]: "Crosshole Sonic",
+};
+
+export const TEST_RESULT_STATUS_COLORS: Record<TestResultStatus, string> = {
+  [TestResultStatus.PENDING]: "bg-gray-100 text-gray-800",
+  [TestResultStatus.PASS]: "bg-green-100 text-green-800",
+  [TestResultStatus.FAIL]: "bg-red-100 text-red-800",
+  [TestResultStatus.INCONCLUSIVE]: "bg-yellow-100 text-yellow-800",
+};
+
+// ─── Workforce & Delays ─────────────────────────────────────────────────────
+
+export const WORKFORCE_TRADES = [
+  "Piling Operator",
+  "Crane Operator",
+  "Rigger",
+  "Steel Fixer",
+  "Concreter",
+  "General Labour",
+  "Surveyor",
+  "Foreman",
+  "Engineer",
+  "Safety Officer",
+] as const;
+
+export const DELAY_REASONS = [
+  "Weather",
+  "Equipment Breakdown",
+  "Material Shortage",
+  "Subcontractor",
+  "Design Change",
+  "Client Instruction",
+  "Other",
+] as const;

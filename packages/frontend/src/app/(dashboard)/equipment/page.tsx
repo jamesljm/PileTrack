@@ -23,7 +23,7 @@ function EquipmentMobileCard({ item }: { item: Equipment }) {
 
   return (
     <Link
-      href={item.siteId ? `/sites/${item.siteId}/equipment/${item.id}` : `/equipment`}
+      href={item.siteId ? `/sites/${item.siteId}/equipment/${item.id}` : `/equipment/${item.id}`}
       className="block"
     >
       <div className="flex items-center gap-3 rounded-lg border p-3 active:bg-accent/50 transition-colors">

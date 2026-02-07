@@ -11,6 +11,9 @@ import reportsRoutes from "./reports.routes";
 import notificationsRoutes from "./notifications.routes";
 import holdPointsRoutes from "./hold-points.routes";
 import productionRoutes from "./production.routes";
+import dailyLogRoutes from "./daily-log.routes";
+import boreholeLogRoutes from "./borehole-log.routes";
+import testResultRoutes from "./test-result.routes";
 
 const router = Router();
 
@@ -26,5 +29,8 @@ router.use("/reports", reportsRoutes);
 router.use("/notifications", notificationsRoutes);
 router.use("/", holdPointsRoutes);
 router.use("/", productionRoutes);
+router.use("/daily-logs", dailyLogRoutes);
+router.use("/borehole-logs", boreholeLogRoutes);
+router.use("/test-results", testResultRoutes);
 
 export default router;

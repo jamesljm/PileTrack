@@ -112,6 +112,34 @@ export enum HoldPointStatus {
   REJECTED = "REJECTED",
 }
 
+// ─── Daily Log ──────────────────────────────────────────────────────────────
+
+export enum DailyLogStatus {
+  DRAFT = "DRAFT",
+  SUBMITTED = "SUBMITTED",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+}
+
+// ─── Test ───────────────────────────────────────────────────────────────────
+
+export enum TestType {
+  PIT = "PIT",
+  STATIC_LOAD_TEST = "STATIC_LOAD_TEST",
+  DYNAMIC_LOAD_TEST = "DYNAMIC_LOAD_TEST",
+  CUBE_TEST = "CUBE_TEST",
+  CORE_TEST = "CORE_TEST",
+  KODEN = "KODEN",
+  CROSSHOLE_SONIC = "CROSSHOLE_SONIC",
+}
+
+export enum TestResultStatus {
+  PENDING = "PENDING",
+  PASS = "PASS",
+  FAIL = "FAIL",
+  INCONCLUSIVE = "INCONCLUSIVE",
+}
+
 // ─── Notification ────────────────────────────────────────────────────────────
 
 export enum NotificationType {

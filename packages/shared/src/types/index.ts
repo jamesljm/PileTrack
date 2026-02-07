@@ -35,3 +35,19 @@ export type {
   TransferItem,
   TransferWithItems,
 } from "./transfer.types";
+
+export type {
+  DailyLog,
+  WorkforceEntry,
+  SafetyRecord,
+  DelayEntry,
+  MaterialUsageEntry,
+} from "./daily-log.types";
+
+export type {
+  BoreholeLog,
+  StratumEntry,
+  SPTEntry,
+} from "./borehole-log.types";
+
+export type { TestResult } from "./test-result.types";

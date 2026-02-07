@@ -123,6 +123,30 @@ enum NotificationType {
   SYSTEM
 }
 
+enum DailyLogStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum TestType {
+  PIT
+  STATIC_LOAD_TEST
+  DYNAMIC_LOAD_TEST
+  CUBE_TEST
+  CORE_TEST
+  KODEN
+  CROSSHOLE_SONIC
+}
+
+enum TestResultStatus {
+  PENDING
+  PASS
+  FAIL
+  INCONCLUSIVE
+}
+
 // ─── Models ─────────────────────────────────────────────────────────────────
 
 model User {
@@ -154,6 +178,10 @@ model User {
   syncLogs       SyncLog[]
   holdPointSigs  HoldPoint[]      @relation("HoldPointSigner")
   serviceRecords ServiceRecord[]  @relation("ServiceRecordCreator")
+  dailyLogsCreated   DailyLog[]   @relation("DailyLogCreator")
+  dailyLogsApproved  DailyLog[]   @relation("DailyLogApprover")
+  boreholeLogsCreated BoreholeLog[] @relation("BoreholeLogCreator")
+  testResultsCreated TestResult[]  @relation("TestResultCreator")
 
   @@index([email])
   @@index([role])
@@ -187,6 +215,9 @@ model Site {
   transfersFrom   Transfer[] @relation("TransferFromSite")
   transfersTo     Transfer[] @relation("TransferToSite")
   equipmentSiteHistory EquipmentSiteHistory[]
+  dailyLogs       DailyLog[]
+  boreholeLogs    BoreholeLog[]
+  testResults     TestResult[]
 
   @@index([code])
   @@index([status])
@@ -236,6 +267,7 @@ model ActivityRecord {
   createdBy   User @relation("ActivityCreator", fields: [createdById], references: [id])
   approvedBy  User? @relation("ActivityApprover", fields: [approvedById], references: [id])
   holdPoints  HoldPoint[]
+  testResults TestResult[]
 
   @@index([siteId])
   @@index([activityType])
@@ -516,4 +548,99 @@ model HoldPoint {
   @@index([activityId])
   @@index([status])
   @@map("hold_points")
+}
+
+model DailyLog {
+  id             String         @id @default(uuid()) @db.Uuid
+  siteId         String         @map("site_id") @db.Uuid
+  logDate        DateTime       @map("log_date") @db.Date
+  status         DailyLogStatus @default(DRAFT)
+  workforce      Json           @default("[]")
+  safety         Json           @default("{}")
+  delays         Json           @default("[]")
+  materialUsage  Json           @default("[]")
+  weather        Json?
+  remarks        String?        @db.Text
+  photos         Json?          @default("[]")
+  createdById    String         @map("created_by_id") @db.Uuid
+  approvedById   String?        @map("approved_by_id") @db.Uuid
+  approvedAt     DateTime?      @map("approved_at")
+  rejectionNotes String?        @map("rejection_notes") @db.Text
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  deletedAt      DateTime?      @map("deleted_at")
+
+  site       Site  @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdBy  User  @relation("DailyLogCreator", fields: [createdById], references: [id])
+  approvedBy User? @relation("DailyLogApprover", fields: [approvedById], references: [id])
+
+  @@unique([siteId, logDate])
+  @@index([siteId])
+  @@index([logDate])
+  @@index([status])
+  @@index([createdById])
+  @@index([deletedAt])
+  @@map("daily_logs")
+}
+
+model BoreholeLog {
+  id               String    @id @default(uuid()) @db.Uuid
+  siteId           String    @map("site_id") @db.Uuid
+  boreholeId       String    @map("borehole_id") @db.VarChar(50)
+  logDate          DateTime  @map("log_date") @db.Date
+  location         String?   @db.VarChar(200)
+  gpsLat           Float?    @map("gps_lat")
+  gpsLng           Float?    @map("gps_lng")
+  totalDepth       Float     @map("total_depth")
+  groundLevel      Float?    @map("ground_level")
+  groundwaterLevel Float?    @map("groundwater_level")
+  casingDepth      Float?    @map("casing_depth")
+  strata           Json      @default("[]")
+  sptResults       Json      @default("[]")
+  remarks          String?   @db.Text
+  photos           Json?     @default("[]")
+  drillingMethod   String?   @map("drilling_method") @db.VarChar(100)
+  contractor       String?   @db.VarChar(200)
+  loggedBy         String?   @map("logged_by") @db.VarChar(200)
+  createdById      String    @map("created_by_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  site      Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdBy User @relation("BoreholeLogCreator", fields: [createdById], references: [id])
+
+  @@unique([siteId, boreholeId])
+  @@index([siteId])
+  @@index([deletedAt])
+  @@map("borehole_logs")
+}
+
+model TestResult {
+  id            String           @id @default(uuid()) @db.Uuid
+  siteId        String           @map("site_id") @db.Uuid
+  activityId    String?          @map("activity_id") @db.Uuid
+  testType      TestType         @map("test_type")
+  testDate      DateTime         @map("test_date") @db.Date
+  pileId        String?          @map("pile_id") @db.VarChar(50)
+  status        TestResultStatus @default(PENDING)
+  results       Json             @default("{}")
+  remarks       String?          @db.Text
+  photos        Json?            @default("[]")
+  conductedBy   String?          @map("conducted_by") @db.VarChar(200)
+  createdById   String           @map("created_by_id") @db.Uuid
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  deletedAt     DateTime?        @map("deleted_at")
+
+  site       Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  activity   ActivityRecord? @relation(fields: [activityId], references: [id])
+  createdBy  User            @relation("TestResultCreator", fields: [createdById], references: [id])
+
+  @@index([siteId])
+  @@index([activityId])
+  @@index([testType])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("test_results")
 }

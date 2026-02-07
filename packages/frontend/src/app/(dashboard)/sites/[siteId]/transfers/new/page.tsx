@@ -1,10 +1,12 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TransferForm } from "@/components/forms/transfer-form";
 import { useCreateTransfer } from "@/queries/use-transfers";
 import { useSites } from "@/queries/use-sites";
+import { useEquipment } from "@/queries/use-equipment";
+import { useMaterials } from "@/queries/use-materials";
 import { toast } from "@/components/ui/use-toast";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 
@@ -13,6 +15,11 @@ export default function NewTransferPage({ params }: { params: Promise<{ siteId: 
   const router = useRouter();
   const createTransfer = useCreateTransfer();
   const { data: sitesData, isLoading } = useSites({ pageSize: 100 });
+
+  const [fromSiteId, setFromSiteId] = useState(siteId);
+
+  const { data: equipmentData } = useEquipment({ siteId: fromSiteId, pageSize: 100 });
+  const { data: materialsData } = useMaterials({ siteId: fromSiteId, pageSize: 100 });
 
   const handleSubmit = async (data: any) => {
     try {
@@ -29,7 +36,15 @@ export default function NewTransferPage({ params }: { params: Promise<{ siteId: 
   return (
     <div className="space-y-4">
       <h1 className="text-lg md:text-2xl font-bold">New Transfer</h1>
-      <TransferForm sites={sitesData?.data ?? []} defaultFromSiteId={siteId} onSubmit={handleSubmit} isLoading={createTransfer.isPending} />
+      <TransferForm
+        sites={sitesData?.data ?? []}
+        equipment={equipmentData?.data ?? []}
+        materials={materialsData?.data ?? []}
+        defaultFromSiteId={siteId}
+        onFromSiteChange={setFromSiteId}
+        onSubmit={handleSubmit}
+        isLoading={createTransfer.isPending}
+      />
     </div>
   );
 }

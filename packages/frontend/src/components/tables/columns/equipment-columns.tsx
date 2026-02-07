@@ -131,7 +131,7 @@ export const equipmentColumns: ColumnDef<Equipment>[] = [
           href={
             equipment.siteId
               ? `/sites/${equipment.siteId}/equipment/${equipment.id}`
-              : `/equipment`
+              : `/equipment/${equipment.id}`
           }
         >
           <Button variant="ghost" size="sm">
