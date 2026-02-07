@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { TableSkeleton } from "@/components/shared/loading-skeleton";
 import { NCR_STATUS_COLORS, NCR_STATUS_LABELS, NCR_PRIORITY_COLORS, NCR_PRIORITY_LABELS } from "@/lib/constants";
 import Link from "next/link";
-import { Plus, ChevronRight } from "lucide-react";
+import { Plus, ChevronRight, ArrowLeft } from "lucide-react";
 import type { NCR, NCRStatus, NCRPriority } from "@piletrack/shared";
 
 function NCRMobileCard({ item, siteId }: { item: NCR; siteId: string }) {
@@ -39,7 +39,14 @@ export default function SiteNCRsPage({ params }: { params: Promise<{ siteId: str
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-lg md:text-2xl font-bold">Non-Conformance Reports</h1>
+        <div className="flex items-center gap-3">
+          <Link href={`/sites/${siteId}`}>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <h1 className="text-lg md:text-2xl font-bold">Non-Conformance Reports</h1>
+        </div>
         <Link href={`/sites/${siteId}/ncrs/new`}>
           <Button size="sm" className="h-9">
             <Plus className="mr-1.5 h-4 w-4" />

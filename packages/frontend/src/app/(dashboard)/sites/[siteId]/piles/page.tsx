@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { TableSkeleton } from "@/components/shared/loading-skeleton";
 import { PILE_STATUS_COLORS, PILE_STATUS_LABELS, ACTIVITY_TYPE_LABELS } from "@/lib/constants";
 import Link from "next/link";
-import { Plus, ChevronRight } from "lucide-react";
+import { Plus, ChevronRight, ArrowLeft } from "lucide-react";
 import type { Pile, PileStatus, ActivityType } from "@piletrack/shared";
 
 function PileMobileCard({ item, siteId }: { item: Pile; siteId: string }) {
@@ -42,7 +42,14 @@ export default function SitePilesPage({ params }: { params: Promise<{ siteId: st
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-lg md:text-2xl font-bold">Piles</h1>
+        <div className="flex items-center gap-3">
+          <Link href={`/sites/${siteId}`}>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <h1 className="text-lg md:text-2xl font-bold">Piles</h1>
+        </div>
         <Link href={`/sites/${siteId}/piles/new`}>
           <Button size="sm" className="h-9">
             <Plus className="mr-1.5 h-4 w-4" />

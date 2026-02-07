@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { EquipmentForm } from "@/components/forms/equipment-form";
 import { useCreateEquipment } from "@/queries/use-equipment";
 import { toast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function NewEquipmentPage({ params }: { params: Promise<{ siteId: string }> }) {
   const { siteId } = use(params);
@@ -23,7 +26,14 @@ export default function NewEquipmentPage({ params }: { params: Promise<{ siteId:
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg md:text-2xl font-bold">Add Equipment</h1>
+      <div className="flex items-center gap-3">
+        <Link href={`/sites/${siteId}`}>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+        <h1 className="text-lg md:text-2xl font-bold">Add Equipment</h1>
+      </div>
       <EquipmentForm onSubmit={handleSubmit} isLoading={createEquipment.isPending} />
     </div>
   );

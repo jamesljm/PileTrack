@@ -9,6 +9,9 @@ import { useEquipment } from "@/queries/use-equipment";
 import { useMaterials } from "@/queries/use-materials";
 import { toast } from "@/components/ui/use-toast";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function NewTransferPage({ params }: { params: Promise<{ siteId: string }> }) {
   const { siteId } = use(params);
@@ -35,7 +38,14 @@ export default function NewTransferPage({ params }: { params: Promise<{ siteId: 
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg md:text-2xl font-bold">New Transfer</h1>
+      <div className="flex items-center gap-3">
+        <Link href={`/sites/${siteId}`}>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+        <h1 className="text-lg md:text-2xl font-bold">New Transfer</h1>
+      </div>
       <TransferForm
         sites={sitesData?.data ?? []}
         equipment={equipmentData?.data ?? []}

@@ -18,10 +18,18 @@ const SEGMENT_LABELS: Record<string, string> = {
   activities: "Activities",
   materials: "Materials",
   transfers: "Transfers",
+  piles: "Piles",
+  ncrs: "NCRs",
+  "concrete-deliveries": "Concrete Deliveries",
+  "daily-logs": "Daily Logs",
+  "borehole-logs": "Borehole Logs",
+  "test-results": "Test Results",
   new: "New",
   scan: "Scan QR",
   "forgot-password": "Forgot Password",
 };
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function Breadcrumbs() {
   const pathname = usePathname();
@@ -49,8 +57,11 @@ export function Breadcrumbs() {
       {segments.map((segment, index) => {
         const href = "/" + segments.slice(0, index + 1).join("/");
         const isLast = index === segments.length - 1;
-        const label =
-          SEGMENT_LABELS[segment] ?? decodeURIComponent(segment);
+        const isUUID = UUID_REGEX.test(segment);
+        const prevSegment = index > 0 ? segments[index - 1] : null;
+        const label = isUUID
+          ? (prevSegment === "sites" ? "Site" : "Details")
+          : (SEGMENT_LABELS[segment] ?? decodeURIComponent(segment));
 
         return (
           <Fragment key={href}>
