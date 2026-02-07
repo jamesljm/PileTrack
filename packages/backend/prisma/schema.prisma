@@ -619,7 +619,7 @@ model DailyLog {
   workforce      Json           @default("[]")
   safety         Json           @default("{}")
   delays         Json           @default("[]")
-  materialUsage  Json           @default("[]")
+  materialUsage  Json           @default("[]") @map("material_usage")
   weather        Json?
   remarks        String?        @db.Text
   photos         Json?          @default("[]")
@@ -657,7 +657,7 @@ model BoreholeLog {
   groundwaterLevel Float?    @map("groundwater_level")
   casingDepth      Float?    @map("casing_depth")
   strata           Json      @default("[]")
-  sptResults       Json      @default("[]")
+  sptResults       Json      @default("[]") @map("spt_results")
   remarks          String?   @db.Text
   photos           Json?     @default("[]")
   drillingMethod   String?   @map("drilling_method") @db.VarChar(100)
