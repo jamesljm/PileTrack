@@ -9,6 +9,11 @@ import { useUsers } from "@/queries/use-users";
 import { useDailyLogs } from "@/queries/use-daily-logs";
 import { useTestResults } from "@/queries/use-test-results";
 import { useBoreholeLogs } from "@/queries/use-borehole-logs";
+import { usePiles } from "@/queries/use-piles";
+import { useNCRs } from "@/queries/use-ncrs";
+import { useConcreteDeliveries } from "@/queries/use-concrete-deliveries";
+import { SiteCommandCenter } from "@/components/dashboard/site-command-center";
+import { PileKanban } from "@/components/kanban/pile-kanban";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,13 +39,40 @@ import {
   DAILY_LOG_STATUS_COLORS,
   TEST_TYPE_LABELS,
   TEST_RESULT_STATUS_COLORS,
+  NCR_PRIORITY_COLORS,
+  NCR_STATUS_COLORS,
+  NCR_CATEGORY_LABELS,
 } from "@/lib/constants";
 import { FormSkeleton, CardsSkeleton } from "@/components/shared/loading-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
-import { Plus, Activity, Wrench, Package, ArrowLeftRight, Users, Trash2, Loader2, ClipboardList, FlaskConical } from "lucide-react";
-import type { SiteStatus, ActivityType, EquipmentCategory, DailyLogStatus, TestType, TestResultStatus } from "@piletrack/shared";
+import {
+  Plus,
+  Activity,
+  Wrench,
+  Package,
+  Users,
+  Trash2,
+  Loader2,
+  ClipboardList,
+  FlaskConical,
+  LayoutDashboard,
+  Columns3,
+  AlertTriangle,
+  Truck,
+} from "lucide-react";
+import type {
+  SiteStatus,
+  ActivityType,
+  EquipmentCategory,
+  DailyLogStatus,
+  TestType,
+  TestResultStatus,
+  NCRPriority,
+  NCRStatus,
+  NCRCategory,
+} from "@piletrack/shared";
 
 export default function SiteDetailPage({ params }: { params: Promise<{ siteId: string }> }) {
   const { siteId } = use(params);
@@ -54,6 +86,8 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
   const { data: dailyLogsData, isLoading: dailyLogsLoading } = useDailyLogs({ siteId, pageSize: 5 });
   const { data: testResultsData, isLoading: testResultsLoading } = useTestResults({ siteId, pageSize: 5 });
   const { data: boreholeLogsData, isLoading: boreholeLogsLoading } = useBoreholeLogs({ siteId, pageSize: 5 });
+  const { data: ncrsData, isLoading: ncrsLoading } = useNCRs({ siteId, pageSize: 5 });
+  const { data: concreteData, isLoading: concreteLoading } = useConcreteDeliveries({ siteId, pageSize: 5 });
   const site = data?.data;
 
   const assignUser = useAssignSiteUser(siteId);
@@ -64,11 +98,11 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [selectedSiteRole, setSelectedSiteRole] = useState<string>("");
   const [removingUser, setRemovingUser] = useState<Record<string, any> | null>(null);
+  const [pileView, setPileView] = useState<"kanban" | "list">("kanban");
 
   const siteUsers = (siteUsersData?.data ?? []) as Array<Record<string, any>>;
   const allUsers = allUsersData?.data ?? [];
 
-  // Filter out users already assigned to this site
   const siteUserIds = new Set(siteUsers.map((su: any) => su.userId ?? su.user?.id ?? su.id));
   const availableUsers = allUsers.filter((u: any) => !siteUserIds.has(u.id));
 
@@ -119,57 +153,67 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
         <Link href={`/sites/${siteId}/activities/new`} className="col-span-2 md:col-span-1">
           <Button className="w-full h-9" size="sm"><Plus className="mr-1.5 h-4 w-4" />New Activity</Button>
         </Link>
+        <Link href={`/sites/${siteId}/piles/new`}>
+          <Button variant="outline" className="w-full h-9" size="sm"><Columns3 className="mr-1.5 h-4 w-4" />New Pile</Button>
+        </Link>
+        <Link href={`/sites/${siteId}/ncrs/new`}>
+          <Button variant="outline" className="w-full h-9" size="sm"><AlertTriangle className="mr-1.5 h-4 w-4" />Raise NCR</Button>
+        </Link>
+        <Link href={`/sites/${siteId}/concrete-deliveries/new`}>
+          <Button variant="outline" className="w-full h-9" size="sm"><Truck className="mr-1.5 h-4 w-4" />Concrete DO</Button>
+        </Link>
         <Link href={`/sites/${siteId}/daily-logs/new`}>
           <Button variant="outline" className="w-full h-9" size="sm"><ClipboardList className="mr-1.5 h-4 w-4" />Daily Log</Button>
         </Link>
         <Link href={`/sites/${siteId}/test-results/new`}>
           <Button variant="outline" className="w-full h-9" size="sm"><FlaskConical className="mr-1.5 h-4 w-4" />Test Result</Button>
         </Link>
-        <Link href={`/sites/${siteId}/equipment/new`}>
-          <Button variant="outline" className="w-full h-9" size="sm"><Wrench className="mr-1.5 h-4 w-4" />Equipment</Button>
-        </Link>
-        <Link href={`/sites/${siteId}/materials/new`}>
-          <Button variant="outline" className="w-full h-9" size="sm"><Package className="mr-1.5 h-4 w-4" />Material</Button>
-        </Link>
-        <Link href={`/sites/${siteId}/transfers/new`}>
-          <Button variant="outline" className="w-full h-9" size="sm"><ArrowLeftRight className="mr-1.5 h-4 w-4" />Transfer</Button>
-        </Link>
         <Link href={`/sites/${siteId}/activities`}>
           <Button variant="outline" className="w-full h-9" size="sm"><Activity className="mr-1.5 h-4 w-4" />All Activity</Button>
         </Link>
       </div>
 
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue="command-center">
         <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="command-center"><LayoutDashboard className="mr-1.5 h-3.5 w-3.5 hidden sm:inline" />Command Center</TabsTrigger>
+          <TabsTrigger value="piles"><Columns3 className="mr-1.5 h-3.5 w-3.5 hidden sm:inline" />Pile Progress</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
-          <TabsTrigger value="equipment">Equipment</TabsTrigger>
-          <TabsTrigger value="materials">Materials</TabsTrigger>
+          <TabsTrigger value="quality">Quality</TabsTrigger>
           <TabsTrigger value="diary">Diary</TabsTrigger>
-          <TabsTrigger value="qc">QC & Geotech</TabsTrigger>
+          <TabsTrigger value="resources">Resources</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-lg border p-4 space-y-2">
-              <h3 className="font-medium">Site Information</h3>
-              <div className="space-y-1 text-sm">
-                <p><span className="text-muted-foreground">Address:</span> {site.address}</p>
-                <p><span className="text-muted-foreground">Contract:</span> {site.contractNumber ?? "N/A"}</p>
-                <p><span className="text-muted-foreground">Start Date:</span> {site.startDate ? new Date(site.startDate).toLocaleDateString() : "N/A"}</p>
-                <p><span className="text-muted-foreground">End Date:</span> {site.expectedEndDate ? new Date(site.expectedEndDate).toLocaleDateString() : "N/A"}</p>
-              </div>
-            </div>
-            {site.description && (
-              <div className="rounded-lg border p-4 space-y-2">
-                <h3 className="font-medium">Description</h3>
-                <p className="text-sm text-muted-foreground">{site.description}</p>
-              </div>
-            )}
-          </div>
+        {/* Command Center Tab */}
+        <TabsContent value="command-center" className="mt-4">
+          <SiteCommandCenter siteId={siteId} />
         </TabsContent>
 
+        {/* Pile Progress Tab */}
+        <TabsContent value="piles" className="mt-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Pile Progress</h3>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={pileView === "kanban" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPileView("kanban")}
+              >
+                Kanban
+              </Button>
+              <Button
+                variant={pileView === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPileView("list")}
+              >
+                <Link href={`/sites/${siteId}/piles`}>List View</Link>
+              </Button>
+            </div>
+          </div>
+          {pileView === "kanban" && <PileKanban siteId={siteId} />}
+        </TabsContent>
+
+        {/* Activities Tab */}
         <TabsContent value="activities" className="mt-4 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-medium">Recent Activities</h3>
@@ -202,64 +246,146 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
           </Link>
         </TabsContent>
 
-        <TabsContent value="equipment" className="mt-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium">Equipment at this Site</h3>
-            <Link href={`/sites/${siteId}/equipment`}><Button variant="link" size="sm">View All</Button></Link>
-          </div>
-          {equipmentLoading ? <CardsSkeleton count={3} /> : equipmentData?.data?.length ? (
-            <div className="space-y-2">
-              {equipmentData.data.slice(0, 5).map((eq: any) => (
-                <Link key={eq.id} href={`/sites/${siteId}/equipment/${eq.id}`} className="block">
-                  <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{eq.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {eq.code} - {EQUIPMENT_CATEGORY_LABELS[eq.category as EquipmentCategory] ?? eq.category}
-                      </p>
-                    </div>
-                    <Badge variant="outline">{eq.status}</Badge>
-                  </div>
-                </Link>
-              ))}
+        {/* Quality Tab — Test Results + NCRs + Concrete Deliveries + Borehole Logs */}
+        <TabsContent value="quality" className="mt-4 space-y-6">
+          {/* Test Results Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Recent Test Results</h3>
+              <Link href={`/sites/${siteId}/test-results`}><Button variant="link" size="sm">View All</Button></Link>
             </div>
-          ) : (
-            <EmptyState title="No equipment" description="Add equipment to this site." />
-          )}
-          <Link href={`/sites/${siteId}/equipment/new`}>
-            <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />Add Equipment</Button>
-          </Link>
-        </TabsContent>
+            {testResultsLoading ? <CardsSkeleton count={3} /> : testResultsData?.data?.length ? (
+              <div className="space-y-2">
+                {testResultsData.data.slice(0, 5).map((result: any) => (
+                  <Link key={result.id} href={`/sites/${siteId}/test-results/${result.id}`} className="block">
+                    <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          {result.pileId && <span className="text-sm font-medium">{result.pileId}</span>}
+                          <Badge variant="outline" className="text-xs">
+                            {TEST_TYPE_LABELS[result.testType as TestType] ?? result.testType}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(result.testDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Badge className={TEST_RESULT_STATUS_COLORS[result.status as TestResultStatus] ?? ""}>{result.status}</Badge>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No test results" description="Record quality control test results." />
+            )}
+            <Link href={`/sites/${siteId}/test-results/new`}>
+              <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Test</Button>
+            </Link>
+          </div>
 
-        <TabsContent value="materials" className="mt-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium">Materials at this Site</h3>
-            <Link href={`/sites/${siteId}/materials`}><Button variant="link" size="sm">View All</Button></Link>
-          </div>
-          {materialsLoading ? <CardsSkeleton count={3} /> : materialsData?.data?.length ? (
-            <div className="space-y-2">
-              {materialsData.data.slice(0, 5).map((material: any) => (
-                <Link key={material.id} href={`/sites/${siteId}/materials/${material.id}`} className="block">
-                  <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{material.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {material.code} - Stock: {material.currentStock} {material.unit}
-                      </p>
-                    </div>
-                    {material.currentStock <= material.minimumStock && (
-                      <Badge variant="destructive">Low Stock</Badge>
-                    )}
-                  </div>
-                </Link>
-              ))}
+          {/* NCRs Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Non-Conformance Reports</h3>
+              <Link href={`/sites/${siteId}/ncrs`}><Button variant="link" size="sm">View All</Button></Link>
             </div>
-          ) : (
-            <EmptyState title="No materials" description="Add materials to this site." />
-          )}
-          <Link href={`/sites/${siteId}/materials/new`}>
-            <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />Add Material</Button>
-          </Link>
+            {ncrsLoading ? <CardsSkeleton count={3} /> : ncrsData?.data?.length ? (
+              <div className="space-y-2">
+                {ncrsData.data.slice(0, 5).map((ncr: any) => (
+                  <Link key={ncr.id} href={`/sites/${siteId}/ncrs/${ncr.id}`} className="block">
+                    <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{ncr.ncrNumber}</span>
+                          <Badge className={`text-xs ${NCR_PRIORITY_COLORS[ncr.priority as NCRPriority] ?? ""}`}>
+                            {ncr.priority}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {NCR_CATEGORY_LABELS[ncr.category as NCRCategory] ?? ncr.category}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate max-w-[300px]">{ncr.title}</p>
+                      </div>
+                      <Badge className={NCR_STATUS_COLORS[ncr.status as NCRStatus] ?? ""}>{ncr.status}</Badge>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No NCRs" description="No non-conformance reports have been raised." />
+            )}
+            <Link href={`/sites/${siteId}/ncrs/new`}>
+              <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />Raise NCR</Button>
+            </Link>
+          </div>
+
+          {/* Concrete Deliveries Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Concrete Deliveries</h3>
+              <Link href={`/sites/${siteId}/concrete-deliveries`}><Button variant="link" size="sm">View All</Button></Link>
+            </div>
+            {concreteLoading ? <CardsSkeleton count={3} /> : concreteData?.data?.length ? (
+              <div className="space-y-2">
+                {concreteData.data.slice(0, 5).map((delivery: any) => (
+                  <Link key={delivery.id} href={`/sites/${siteId}/concrete-deliveries/${delivery.id}`} className="block">
+                    <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{delivery.doNumber}</span>
+                          <Badge variant="outline" className="text-xs">{delivery.concreteGrade}</Badge>
+                          <span className="text-xs text-muted-foreground">{delivery.volume} m³</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(delivery.deliveryDate).toLocaleDateString()} - {delivery.supplier}
+                        </p>
+                      </div>
+                      {delivery.rejected && <Badge variant="destructive">Rejected</Badge>}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No concrete deliveries" description="Record concrete delivery orders." />
+            )}
+            <Link href={`/sites/${siteId}/concrete-deliveries/new`}>
+              <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Concrete DO</Button>
+            </Link>
+          </div>
+
+          {/* Borehole Logs Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Borehole Logs</h3>
+              <Link href={`/sites/${siteId}/borehole-logs`}><Button variant="link" size="sm">View All</Button></Link>
+            </div>
+            {boreholeLogsLoading ? <CardsSkeleton count={3} /> : boreholeLogsData?.data?.length ? (
+              <div className="space-y-2">
+                {boreholeLogsData.data.slice(0, 5).map((bh: any) => (
+                  <Link key={bh.id} href={`/sites/${siteId}/borehole-logs/${bh.id}`} className="block">
+                    <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{bh.boreholeId}</Badge>
+                          <span className="text-sm font-medium">{bh.totalDepth}m depth</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(bh.logDate).toLocaleDateString()}
+                          {bh.location && ` - ${bh.location}`}
+                        </p>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{(bh.strata ?? []).length} layers</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No borehole logs" description="Record geotechnical investigation data." />
+            )}
+            <Link href={`/sites/${siteId}/borehole-logs/new`}>
+              <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Borehole Log</Button>
+            </Link>
+          </div>
         </TabsContent>
 
         {/* Diary Tab */}
@@ -298,74 +424,67 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
           </Link>
         </TabsContent>
 
-        {/* QC & Geotech Tab */}
-        <TabsContent value="qc" className="mt-4 space-y-6">
-          {/* Test Results Section */}
+        {/* Resources Tab — Equipment + Materials */}
+        <TabsContent value="resources" className="mt-4 space-y-6">
+          {/* Equipment Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium">Recent Test Results</h3>
-              <Link href={`/sites/${siteId}/test-results`}><Button variant="link" size="sm">View All</Button></Link>
+              <h3 className="font-medium">Equipment at this Site</h3>
+              <Link href={`/sites/${siteId}/equipment`}><Button variant="link" size="sm">View All</Button></Link>
             </div>
-            {testResultsLoading ? <CardsSkeleton count={3} /> : testResultsData?.data?.length ? (
+            {equipmentLoading ? <CardsSkeleton count={3} /> : equipmentData?.data?.length ? (
               <div className="space-y-2">
-                {testResultsData.data.slice(0, 5).map((result: any) => (
-                  <Link key={result.id} href={`/sites/${siteId}/test-results/${result.id}`} className="block">
+                {equipmentData.data.slice(0, 5).map((eq: any) => (
+                  <Link key={eq.id} href={`/sites/${siteId}/equipment/${eq.id}`} className="block">
                     <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          {result.pileId && <span className="text-sm font-medium">{result.pileId}</span>}
-                          <Badge variant="outline" className="text-xs">
-                            {TEST_TYPE_LABELS[result.testType as TestType] ?? result.testType}
-                          </Badge>
-                        </div>
+                        <p className="text-sm font-medium">{eq.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(result.testDate).toLocaleDateString()}
+                          {eq.code} - {EQUIPMENT_CATEGORY_LABELS[eq.category as EquipmentCategory] ?? eq.category}
                         </p>
                       </div>
-                      <Badge className={TEST_RESULT_STATUS_COLORS[result.status as TestResultStatus] ?? ""}>{result.status}</Badge>
+                      <Badge variant="outline">{eq.status}</Badge>
                     </div>
                   </Link>
                 ))}
               </div>
             ) : (
-              <EmptyState title="No test results" description="Record quality control test results." />
+              <EmptyState title="No equipment" description="Add equipment to this site." />
             )}
-            <Link href={`/sites/${siteId}/test-results/new`}>
-              <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Test</Button>
+            <Link href={`/sites/${siteId}/equipment/new`}>
+              <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />Add Equipment</Button>
             </Link>
           </div>
 
-          {/* Borehole Logs Section */}
+          {/* Materials Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium">Borehole Logs</h3>
-              <Link href={`/sites/${siteId}/borehole-logs`}><Button variant="link" size="sm">View All</Button></Link>
+              <h3 className="font-medium">Materials at this Site</h3>
+              <Link href={`/sites/${siteId}/materials`}><Button variant="link" size="sm">View All</Button></Link>
             </div>
-            {boreholeLogsLoading ? <CardsSkeleton count={3} /> : boreholeLogsData?.data?.length ? (
+            {materialsLoading ? <CardsSkeleton count={3} /> : materialsData?.data?.length ? (
               <div className="space-y-2">
-                {boreholeLogsData.data.slice(0, 5).map((bh: any) => (
-                  <Link key={bh.id} href={`/sites/${siteId}/borehole-logs/${bh.id}`} className="block">
+                {materialsData.data.slice(0, 5).map((material: any) => (
+                  <Link key={material.id} href={`/sites/${siteId}/materials/${material.id}`} className="block">
                     <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">{bh.boreholeId}</Badge>
-                          <span className="text-sm font-medium">{bh.totalDepth}m depth</span>
-                        </div>
+                        <p className="text-sm font-medium">{material.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(bh.logDate).toLocaleDateString()}
-                          {bh.location && ` - ${bh.location}`}
+                          {material.code} - Stock: {material.currentStock} {material.unit}
                         </p>
                       </div>
-                      <span className="text-xs text-muted-foreground">{(bh.strata ?? []).length} layers</span>
+                      {material.currentStock <= material.minimumStock && (
+                        <Badge variant="destructive">Low Stock</Badge>
+                      )}
                     </div>
                   </Link>
                 ))}
               </div>
             ) : (
-              <EmptyState title="No borehole logs" description="Record geotechnical investigation data." />
+              <EmptyState title="No materials" description="Add materials to this site." />
             )}
-            <Link href={`/sites/${siteId}/borehole-logs/new`}>
-              <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Borehole Log</Button>
+            <Link href={`/sites/${siteId}/materials/new`}>
+              <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />Add Material</Button>
             </Link>
           </div>
         </TabsContent>

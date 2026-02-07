@@ -14,6 +14,10 @@ import productionRoutes from "./production.routes";
 import dailyLogRoutes from "./daily-log.routes";
 import boreholeLogRoutes from "./borehole-log.routes";
 import testResultRoutes from "./test-result.routes";
+import pileRoutes from "./pile.routes";
+import ncrRoutes from "./ncr.routes";
+import concreteDeliveryRoutes from "./concrete-delivery.routes";
+import dashboardRoutes from "./dashboard.routes";
 
 const router = Router();
 
@@ -32,5 +36,9 @@ router.use("/", productionRoutes);
 router.use("/daily-logs", dailyLogRoutes);
 router.use("/borehole-logs", boreholeLogRoutes);
 router.use("/test-results", testResultRoutes);
+router.use("/piles", pileRoutes);
+router.use("/ncrs", ncrRoutes);
+router.use("/concrete-deliveries", concreteDeliveryRoutes);
+router.use("/dashboard", dashboardRoutes);
 
 export default router;

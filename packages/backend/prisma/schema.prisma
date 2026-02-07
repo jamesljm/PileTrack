@@ -39,6 +39,11 @@ enum ActivityType {
   SOIL_NAILING
   GROUND_ANCHOR
   CAISSON_PILE
+  DRIVEN_PILE
+  JACK_IN_PILE
+  CONTIGUOUS_BORED_PILE
+  GROUND_IMPROVEMENT
+  SLOPE_PROTECTION
 }
 
 enum ActivityStatus {
@@ -103,6 +108,12 @@ enum HoldPointType {
   PRE_BORING
   PRE_CAGE
   PRE_CONCRETE
+  POST_BORING
+  CAGE_INSPECTION
+  DURING_CONCRETING
+  POST_CONCRETING
+  PRE_DRIVING
+  FINAL_SET
 }
 
 enum HoldPointStatus {
@@ -138,6 +149,11 @@ enum TestType {
   CORE_TEST
   KODEN
   CROSSHOLE_SONIC
+  SLUMP_TEST
+  PDA
+  PLATE_LOAD_TEST
+  FIELD_DENSITY_TEST
+  GROUT_CUBE_TEST
 }
 
 enum TestResultStatus {
@@ -145,6 +161,43 @@ enum TestResultStatus {
   PASS
   FAIL
   INCONCLUSIVE
+}
+
+enum PileStatus {
+  PLANNED
+  SET_UP
+  BORED
+  CAGED
+  CONCRETED
+  TESTED
+  APPROVED
+  REJECTED
+}
+
+enum NCRStatus {
+  OPEN
+  INVESTIGATING
+  ACTION_REQUIRED
+  RESOLVED
+  CLOSED
+  VOIDED
+}
+
+enum NCRPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum NCRCategory {
+  MATERIAL
+  WORKMANSHIP
+  DIMENSIONAL
+  STRUCTURAL
+  SAFETY
+  ENVIRONMENTAL
+  PROCEDURAL
 }
 
 // ─── Models ─────────────────────────────────────────────────────────────────
@@ -182,6 +235,11 @@ model User {
   dailyLogsApproved  DailyLog[]   @relation("DailyLogApprover")
   boreholeLogsCreated BoreholeLog[] @relation("BoreholeLogCreator")
   testResultsCreated TestResult[]  @relation("TestResultCreator")
+  pilesCreated               Pile[]              @relation("PileCreator")
+  ncrsRaised                 NCR[]               @relation("NCRRaiser")
+  ncrsAssigned               NCR[]               @relation("NCRAssignee")
+  ncrsClosed                 NCR[]               @relation("NCRCloser")
+  concreteDeliveriesCreated  ConcreteDelivery[]  @relation("ConcreteDeliveryCreator")
 
   @@index([email])
   @@index([role])
@@ -218,6 +276,9 @@ model Site {
   dailyLogs       DailyLog[]
   boreholeLogs    BoreholeLog[]
   testResults     TestResult[]
+  piles               Pile[]
+  ncrs                NCR[]
+  concreteDeliveries  ConcreteDelivery[]
 
   @@index([code])
   @@index([status])
@@ -643,4 +704,121 @@ model TestResult {
   @@index([status])
   @@index([deletedAt])
   @@map("test_results")
+}
+
+// ─── New Models ─────────────────────────────────────────────────────────────
+
+model Pile {
+  id              String     @id @default(uuid()) @db.Uuid
+  siteId          String     @map("site_id") @db.Uuid
+  pileId          String     @map("pile_id") @db.VarChar(50)
+  pileType        ActivityType @map("pile_type")
+  status          PileStatus @default(PLANNED)
+  designLength    Float?     @map("design_length")
+  actualLength    Float?     @map("actual_length")
+  designDiameter  Float?     @map("design_diameter")
+  cutOffLevel     Float?     @map("cut_off_level")
+  platformLevel   Float?     @map("platform_level")
+  gridRef         String?    @map("grid_ref") @db.VarChar(50)
+  gpsLat          Float?     @map("gps_lat")
+  gpsLng          Float?     @map("gps_lng")
+  concreteGrade   String?    @map("concrete_grade") @db.VarChar(20)
+  concreteVolume  Float?     @map("concrete_volume")
+  actualConcreteVol Float?   @map("actual_concrete_vol")
+  overconsumption Float?
+  remarks         String?    @db.Text
+  createdById     String     @map("created_by_id") @db.Uuid
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  deletedAt       DateTime?  @map("deleted_at")
+
+  site      Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdBy User @relation("PileCreator", fields: [createdById], references: [id])
+  ncrs      NCR[]
+  concreteDeliveries ConcreteDelivery[]
+
+  @@unique([siteId, pileId])
+  @@index([siteId])
+  @@index([status])
+  @@index([pileType])
+  @@index([deletedAt])
+  @@map("piles")
+}
+
+model NCR {
+  id               String      @id @default(uuid()) @db.Uuid
+  siteId           String      @map("site_id") @db.Uuid
+  pileId           String?     @map("pile_id") @db.Uuid
+  ncrNumber        String      @map("ncr_number") @db.VarChar(50)
+  category         NCRCategory
+  priority         NCRPriority @default(MEDIUM)
+  status           NCRStatus   @default(OPEN)
+  title            String      @db.VarChar(300)
+  description      String      @db.Text
+  rootCause        String?     @map("root_cause") @db.Text
+  correctiveAction String?     @map("corrective_action") @db.Text
+  preventiveAction String?     @map("preventive_action") @db.Text
+  photos           Json?       @default("[]")
+  raisedById       String      @map("raised_by_id") @db.Uuid
+  assignedToId     String?     @map("assigned_to_id") @db.Uuid
+  closedById       String?     @map("closed_by_id") @db.Uuid
+  raisedAt         DateTime    @default(now()) @map("raised_at")
+  dueDate          DateTime?   @map("due_date")
+  closedAt         DateTime?   @map("closed_at")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+  deletedAt        DateTime?   @map("deleted_at")
+
+  site       Site  @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  pile       Pile? @relation(fields: [pileId], references: [id])
+  raisedBy   User  @relation("NCRRaiser", fields: [raisedById], references: [id])
+  assignedTo User? @relation("NCRAssignee", fields: [assignedToId], references: [id])
+  closedBy   User? @relation("NCRCloser", fields: [closedById], references: [id])
+
+  @@index([siteId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([pileId])
+  @@index([deletedAt])
+  @@map("ncrs")
+}
+
+model ConcreteDelivery {
+  id               String    @id @default(uuid()) @db.Uuid
+  siteId           String    @map("site_id") @db.Uuid
+  pileId           String?   @map("pile_id") @db.Uuid
+  doNumber         String    @map("do_number") @db.VarChar(50)
+  deliveryDate     DateTime  @map("delivery_date")
+  supplier         String    @db.VarChar(200)
+  batchPlant       String?   @map("batch_plant") @db.VarChar(200)
+  truckNumber      String?   @map("truck_number") @db.VarChar(50)
+  concreteGrade    String    @map("concrete_grade") @db.VarChar(20)
+  volume           Float
+  slumpRequired    Float?    @map("slump_required")
+  slumpActual      Float?    @map("slump_actual")
+  batchTime        DateTime? @map("batch_time")
+  arrivalTime      DateTime? @map("arrival_time")
+  pourStartTime    DateTime? @map("pour_start_time")
+  pourEndTime      DateTime? @map("pour_end_time")
+  temperature      Float?
+  cubesTaken       Int?      @map("cubes_taken")
+  cubeSampleIds    Json?     @default("[]") @map("cube_sample_ids")
+  rejected         Boolean   @default(false)
+  rejectionReason  String?   @map("rejection_reason") @db.Text
+  remarks          String?   @db.Text
+  createdById      String    @map("created_by_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  site      Site  @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  pile      Pile? @relation(fields: [pileId], references: [id])
+  createdBy User  @relation("ConcreteDeliveryCreator", fields: [createdById], references: [id])
+
+  @@index([siteId])
+  @@index([pileId])
+  @@index([deliveryDate])
+  @@index([deletedAt])
+  @@map("concrete_deliveries")
 }

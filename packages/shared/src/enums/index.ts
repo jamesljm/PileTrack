@@ -32,6 +32,11 @@ export enum ActivityType {
   SOIL_NAILING = "SOIL_NAILING",
   GROUND_ANCHOR = "GROUND_ANCHOR",
   CAISSON_PILE = "CAISSON_PILE",
+  DRIVEN_PILE = "DRIVEN_PILE",
+  JACK_IN_PILE = "JACK_IN_PILE",
+  CONTIGUOUS_BORED_PILE = "CONTIGUOUS_BORED_PILE",
+  GROUND_IMPROVEMENT = "GROUND_IMPROVEMENT",
+  SLOPE_PROTECTION = "SLOPE_PROTECTION",
 }
 
 export enum ActivityStatus {
@@ -104,6 +109,12 @@ export enum HoldPointType {
   PRE_BORING = "PRE_BORING",
   PRE_CAGE = "PRE_CAGE",
   PRE_CONCRETE = "PRE_CONCRETE",
+  POST_BORING = "POST_BORING",
+  CAGE_INSPECTION = "CAGE_INSPECTION",
+  DURING_CONCRETING = "DURING_CONCRETING",
+  POST_CONCRETING = "POST_CONCRETING",
+  PRE_DRIVING = "PRE_DRIVING",
+  FINAL_SET = "FINAL_SET",
 }
 
 export enum HoldPointStatus {
@@ -131,6 +142,11 @@ export enum TestType {
   CORE_TEST = "CORE_TEST",
   KODEN = "KODEN",
   CROSSHOLE_SONIC = "CROSSHOLE_SONIC",
+  SLUMP_TEST = "SLUMP_TEST",
+  PDA = "PDA",
+  PLATE_LOAD_TEST = "PLATE_LOAD_TEST",
+  FIELD_DENSITY_TEST = "FIELD_DENSITY_TEST",
+  GROUT_CUBE_TEST = "GROUT_CUBE_TEST",
 }
 
 export enum TestResultStatus {
@@ -152,4 +168,45 @@ export enum NotificationType {
   EQUIPMENT_SERVICE_DUE = "EQUIPMENT_SERVICE_DUE",
   LOW_STOCK_ALERT = "LOW_STOCK_ALERT",
   SYSTEM = "SYSTEM",
+}
+
+// ─── Pile ───────────────────────────────────────────────────────────────────
+
+export enum PileStatus {
+  PLANNED = "PLANNED",
+  SET_UP = "SET_UP",
+  BORED = "BORED",
+  CAGED = "CAGED",
+  CONCRETED = "CONCRETED",
+  TESTED = "TESTED",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+}
+
+// ─── NCR ────────────────────────────────────────────────────────────────────
+
+export enum NCRStatus {
+  OPEN = "OPEN",
+  INVESTIGATING = "INVESTIGATING",
+  ACTION_REQUIRED = "ACTION_REQUIRED",
+  RESOLVED = "RESOLVED",
+  CLOSED = "CLOSED",
+  VOIDED = "VOIDED",
+}
+
+export enum NCRPriority {
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  CRITICAL = "CRITICAL",
+}
+
+export enum NCRCategory {
+  MATERIAL = "MATERIAL",
+  WORKMANSHIP = "WORKMANSHIP",
+  DIMENSIONAL = "DIMENSIONAL",
+  STRUCTURAL = "STRUCTURAL",
+  SAFETY = "SAFETY",
+  ENVIRONMENTAL = "ENVIRONMENTAL",
+  PROCEDURAL = "PROCEDURAL",
 }

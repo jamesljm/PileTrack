@@ -36,6 +36,11 @@ import { PileHeadHackingForm } from "./pile-head-hacking-form";
 import { SoilNailingForm } from "./soil-nailing-form";
 import { GroundAnchorForm } from "./ground-anchor-form";
 import { CaissonPileForm } from "./caisson-pile-form";
+import { DrivenPilingForm } from "./driven-piling-form";
+import { JackInPilingForm } from "./jack-in-piling-form";
+import { ContiguousBoredPileForm } from "./contiguous-bored-pile-form";
+import { GroundImprovementForm } from "./ground-improvement-form";
+import { SlopeProtectionForm } from "./slope-protection-form";
 import { Loader2 } from "lucide-react";
 
 const commonSchema = z.object({
@@ -63,6 +68,11 @@ const DETAIL_FORM_MAP: Record<ActivityType, React.ComponentType<{ control: any; 
   [ActivityType.SOIL_NAILING]: SoilNailingForm,
   [ActivityType.GROUND_ANCHOR]: GroundAnchorForm,
   [ActivityType.CAISSON_PILE]: CaissonPileForm,
+  [ActivityType.DRIVEN_PILE]: DrivenPilingForm,
+  [ActivityType.JACK_IN_PILE]: JackInPilingForm,
+  [ActivityType.CONTIGUOUS_BORED_PILE]: ContiguousBoredPileForm,
+  [ActivityType.GROUND_IMPROVEMENT]: GroundImprovementForm,
+  [ActivityType.SLOPE_PROTECTION]: SlopeProtectionForm,
 };
 
 export function ActivityFormWrapper({

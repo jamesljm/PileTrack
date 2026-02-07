@@ -51,3 +51,12 @@ export type {
 } from "./borehole-log.types";
 
 export type { TestResult } from "./test-result.types";
+
+export type { Pile, PileSummary } from "./pile.types";
+
+export type { NCR, NCRSummary } from "./ncr.types";
+
+export type {
+  ConcreteDelivery,
+  ConcreteDeliverySummary,
+} from "./concrete-delivery.types";

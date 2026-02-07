@@ -17,6 +17,10 @@ export {
   DailyLogStatus,
   TestType,
   TestResultStatus,
+  PileStatus,
+  NCRStatus,
+  NCRPriority,
+  NCRCategory,
 } from "./enums";
 
 // ─── Schemas: Common ─────────────────────────────────────────────────────────
@@ -104,6 +108,11 @@ export {
   soilNailingSchema,
   groundAnchorSchema,
   caissonPileSchema,
+  drivenPilingSchema,
+  jackInPilingSchema,
+  contiguousBoredPileSchema,
+  groundImprovementSchema,
+  slopeProtectionSchema,
   activityDetailSchemaMap,
   validateActivityDetails,
 } from "./schemas/activity-details";
@@ -120,6 +129,11 @@ export type {
   SoilNailingDetails,
   GroundAnchorDetails,
   CaissonPileDetails,
+  DrivenPilingDetails,
+  JackInPilingDetails,
+  ContiguousBoredPileDetails,
+  GroundImprovementDetails,
+  SlopeProtectionDetails,
 } from "./schemas/activity-details";
 
 // ─── Schemas: Hold Point ─────────────────────────────────────────────────────
@@ -226,6 +240,12 @@ export type {
 } from "./types";
 export type { BoreholeLog, StratumEntry, SPTEntry } from "./types";
 export type { TestResult } from "./types";
+export type { Pile, PileSummary } from "./types";
+export type { NCR, NCRSummary } from "./types";
+export type {
+  ConcreteDelivery,
+  ConcreteDeliverySummary,
+} from "./types";
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 export {
