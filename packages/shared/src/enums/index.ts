@@ -63,6 +63,23 @@ export enum EquipmentCategory {
   GENERAL = "GENERAL",
 }
 
+export enum ServiceType {
+  ROUTINE_MAINTENANCE = "ROUTINE_MAINTENANCE",
+  REPAIR = "REPAIR",
+  INSPECTION = "INSPECTION",
+  OVERHAUL = "OVERHAUL",
+  CALIBRATION = "CALIBRATION",
+  BREAKDOWN_REPAIR = "BREAKDOWN_REPAIR",
+}
+
+export enum EquipmentCondition {
+  EXCELLENT = "EXCELLENT",
+  GOOD = "GOOD",
+  FAIR = "FAIR",
+  POOR = "POOR",
+  CRITICAL = "CRITICAL",
+}
+
 // ─── Transfer ────────────────────────────────────────────────────────────────
 
 export enum TransferStatus {
@@ -79,6 +96,20 @@ export enum SyncAction {
   CREATE = "CREATE",
   UPDATE = "UPDATE",
   DELETE = "DELETE",
+}
+
+// ─── Hold Point ─────────────────────────────────────────────────────────────
+
+export enum HoldPointType {
+  PRE_BORING = "PRE_BORING",
+  PRE_CAGE = "PRE_CAGE",
+  PRE_CONCRETE = "PRE_CONCRETE",
+}
+
+export enum HoldPointStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
 }
 
 // ─── Notification ────────────────────────────────────────────────────────────

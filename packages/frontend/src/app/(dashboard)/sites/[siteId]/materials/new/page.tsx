@@ -22,8 +22,8 @@ export default function NewMaterialPage({ params }: { params: Promise<{ siteId: 
   };
 
   return (
-    <div className="space-y-6">
-      <div><h1 className="text-2xl font-bold">Add Material</h1><p className="text-muted-foreground">Add a new material to this site</p></div>
+    <div className="space-y-4">
+      <h1 className="text-lg md:text-2xl font-bold">Add Material</h1>
       <MaterialForm onSubmit={handleSubmit} isLoading={createMaterial.isPending} />
     </div>
   );

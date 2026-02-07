@@ -37,10 +37,10 @@ export default function ApprovalsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div><h1 className="text-2xl font-bold">Pending Approvals</h1><p className="text-muted-foreground">Review and approve submitted activities</p></div>
+    <div className="space-y-4">
+      <h1 className="text-lg md:text-2xl font-bold">Pending Approvals</h1>
       {isLoading ? <CardsSkeleton count={4} /> : data?.data?.length ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {data.data.map((activity) => (
             <ApprovalCard key={activity.id} id={activity.id} activityType={(activity as any).activityType as ActivityType} date={(activity as any).activityDate ?? ""} siteName={(activity as any).site?.name ?? ""} createdByName={(activity as any).createdBy ? `${(activity as any).createdBy.firstName} ${(activity as any).createdBy.lastName}` : ""} onApprove={setApprovalId} onReject={setRejectionId} />
           ))}

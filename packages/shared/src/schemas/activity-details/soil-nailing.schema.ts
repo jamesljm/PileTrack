@@ -1,5 +1,25 @@
 import { z } from "zod";
 
+const stageTimingSchema = z.object({
+  start: z.string().optional(),
+  end: z.string().optional(),
+});
+
+const stageTimingsSchema = z.object({
+  setup: stageTimingSchema.optional(),
+  drilling: stageTimingSchema.optional(),
+  grouting: stageTimingSchema.optional(),
+  facing: stageTimingSchema.optional(),
+});
+
+const equipmentUsedSchema = z.object({
+  equipmentId: z.string().uuid().optional(),
+  name: z.string().min(1).max(200).trim(),
+  hours: z.number().min(0).max(24),
+  isDowntime: z.boolean().default(false),
+  downtimeReason: z.string().max(500).trim().optional(),
+});
+
 export const soilNailingSchema = z.object({
   nailId: z
     .string()
@@ -73,6 +93,10 @@ export const soilNailingSchema = z.object({
     .positive("Vertical spacing must be positive")
     .max(10, "Vertical spacing must not exceed 10m")
     .describe("Vertical spacing in m"),
+
+  // Enhanced fields
+  stageTimings: stageTimingsSchema.optional(),
+  equipmentUsed: z.array(equipmentUsedSchema).max(20).optional(),
 });
 
 export type SoilNailingDetails = z.infer<typeof soilNailingSchema>;

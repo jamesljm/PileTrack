@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
@@ -31,42 +31,41 @@ export function ApprovalCard({
 }: ApprovalCardProps) {
   return (
     <Card>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <Badge variant="outline">
+      <CardContent className="p-3 md:p-4">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <Badge variant="outline" className="text-[10px] md:text-xs">
             {ACTIVITY_TYPE_LABELS[activityType]}
           </Badge>
-          <Badge className="bg-blue-100 text-blue-800">SUBMITTED</Badge>
+          <Badge className="bg-blue-100 text-blue-800 text-[10px] md:text-xs">SUBMITTED</Badge>
         </div>
-        <div className="space-y-1 text-sm">
-          <p className="font-medium">{siteName}</p>
-          <p className="text-muted-foreground">
-            {date ? format(new Date(date), "dd MMM yyyy") : "—"}
+        <div className="space-y-0.5 text-sm mb-3">
+          <p className="font-medium truncate">{siteName}</p>
+          <p className="text-xs text-muted-foreground">
+            {date ? format(new Date(date), "dd MMM yyyy") : "—"} - {createdByName}
           </p>
-          <p className="text-muted-foreground">By: {createdByName}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            className="flex-1 h-8"
+            onClick={() => onApprove(id)}
+            disabled={isLoading}
+          >
+            <Check className="h-3.5 w-3.5 mr-1" />
+            Approve
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            className="flex-1 h-8"
+            onClick={() => onReject(id)}
+            disabled={isLoading}
+          >
+            <X className="h-3.5 w-3.5 mr-1" />
+            Reject
+          </Button>
         </div>
       </CardContent>
-      <CardFooter className="flex gap-2 p-4 pt-0">
-        <Button
-          size="sm"
-          className="flex-1"
-          onClick={() => onApprove(id)}
-          disabled={isLoading}
-        >
-          <Check className="h-4 w-4 mr-1" />
-          Approve
-        </Button>
-        <Button
-          size="sm"
-          variant="destructive"
-          className="flex-1"
-          onClick={() => onReject(id)}
-          disabled={isLoading}
-        >
-          <X className="h-4 w-4 mr-1" />
-          Reject
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

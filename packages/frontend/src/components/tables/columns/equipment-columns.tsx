@@ -6,11 +6,13 @@ import { DataTableColumnHeader } from "../data-table-column-header";
 import {
   EQUIPMENT_CATEGORY_LABELS,
   EQUIPMENT_STATUS_COLORS,
+  EQUIPMENT_CONDITION_LABELS,
+  EQUIPMENT_CONDITION_COLORS,
 } from "@/lib/constants";
 import type { Equipment } from "@piletrack/shared";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { Eye, AlertTriangle } from "lucide-react";
 
 export const equipmentColumns: ColumnDef<Equipment>[] = [
   {
@@ -56,6 +58,31 @@ export const equipmentColumns: ColumnDef<Equipment>[] = [
     filterFn: (row, id, value) => value === row.getValue(id),
   },
   {
+    accessorKey: "condition",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Condition" />
+    ),
+    cell: ({ row }) => {
+      const condition = row.getValue("condition") as string | undefined;
+      if (!condition) return <span className="text-muted-foreground">-</span>;
+      return (
+        <Badge className={EQUIPMENT_CONDITION_COLORS[condition as keyof typeof EQUIPMENT_CONDITION_COLORS] ?? ""}>
+          {EQUIPMENT_CONDITION_LABELS[condition as keyof typeof EQUIPMENT_CONDITION_LABELS] ?? condition}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "totalUsageHours",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Hours" />
+    ),
+    cell: ({ row }) => {
+      const hours = row.getValue("totalUsageHours") as number | undefined;
+      return <span>{hours != null ? hours.toFixed(1) : "-"}</span>;
+    },
+  },
+  {
     id: "site",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Site" />
@@ -72,11 +99,28 @@ export const equipmentColumns: ColumnDef<Equipment>[] = [
     },
   },
   {
-    accessorKey: "manufacturer",
+    id: "lastService",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Manufacturer" />
+      <DataTableColumnHeader column={column} title="Last Service" />
     ),
-    cell: ({ row }) => row.getValue("manufacturer") ?? "-",
+    cell: ({ row }) => {
+      const eq = row.original;
+      const lastServiceDate = eq.lastServiceDate;
+      const nextServiceDate = eq.nextServiceDate;
+
+      if (!lastServiceDate) return <span className="text-muted-foreground">-</span>;
+
+      const isOverdue = nextServiceDate && new Date(nextServiceDate) < new Date();
+
+      return (
+        <div className="flex items-center gap-1">
+          <span>{new Date(lastServiceDate).toLocaleDateString()}</span>
+          {isOverdue && (
+            <AlertTriangle className="h-3 w-3 text-destructive" />
+          )}
+        </div>
+      );
+    },
   },
   {
     id: "actions",

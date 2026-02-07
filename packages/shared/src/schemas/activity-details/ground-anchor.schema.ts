@@ -1,5 +1,25 @@
 import { z } from "zod";
 
+const stageTimingSchema = z.object({
+  start: z.string().optional(),
+  end: z.string().optional(),
+});
+
+const stageTimingsSchema = z.object({
+  setup: stageTimingSchema.optional(),
+  drilling: stageTimingSchema.optional(),
+  grouting: stageTimingSchema.optional(),
+  stressing: stageTimingSchema.optional(),
+});
+
+const equipmentUsedSchema = z.object({
+  equipmentId: z.string().uuid().optional(),
+  name: z.string().min(1).max(200).trim(),
+  hours: z.number().min(0).max(24),
+  isDowntime: z.boolean().default(false),
+  downtimeReason: z.string().max(500).trim().optional(),
+});
+
 export const groundAnchorSchema = z.object({
   anchorId: z
     .string()
@@ -72,6 +92,10 @@ export const groundAnchorSchema = z.object({
     .max(100, "Wall type must not exceed 100 characters")
     .trim()
     .optional(),
+
+  // Enhanced fields
+  stageTimings: stageTimingsSchema.optional(),
+  equipmentUsed: z.array(equipmentUsedSchema).max(20).optional(),
 });
 
 export type GroundAnchorDetails = z.infer<typeof groundAnchorSchema>;

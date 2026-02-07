@@ -53,7 +53,7 @@ interface ActivityFormWrapperProps {
   isLoading?: boolean;
 }
 
-const DETAIL_FORM_MAP: Record<ActivityType, React.ComponentType<{ control: any }>> = {
+const DETAIL_FORM_MAP: Record<ActivityType, React.ComponentType<{ control: any; siteId?: string }>> = {
   [ActivityType.BORED_PILING]: BoredPilingForm,
   [ActivityType.MICROPILING]: MicropilingForm,
   [ActivityType.DIAPHRAGM_WALL]: DiaphragmWallForm,
@@ -116,12 +116,11 @@ export function ActivityFormWrapper({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 md:space-y-6">
         {/* Common Fields */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Activity Details</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-3">
+          <h2 className="text-base md:text-lg font-semibold">Activity Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <FormField
               control={form.control}
               name="activityType"
@@ -133,7 +132,7 @@ export function ActivityFormWrapper({
                     defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="min-h-[44px]">
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                     </FormControl>
@@ -151,7 +150,6 @@ export function ActivityFormWrapper({
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="date"
@@ -159,7 +157,7 @@ export function ActivityFormWrapper({
                 <FormItem>
                   <FormLabel>Date</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" className="min-h-[44px]" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -169,28 +167,28 @@ export function ActivityFormWrapper({
         </div>
 
         {/* Type-Specific Fields */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">
+        <div className="space-y-3">
+          <h2 className="text-base md:text-lg font-semibold">
             {ACTIVITY_TYPE_LABELS[selectedType]} Details
           </h2>
-          <DetailForm control={form.control} />
+          <DetailForm control={form.control} siteId={siteId} />
         </div>
 
         {/* Weather */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Weather Conditions</h2>
+        <div className="space-y-3">
+          <h2 className="text-base md:text-lg font-semibold">Weather</h2>
           <WeatherWidget value={weather} onChange={setWeather} />
         </div>
 
         {/* GPS */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">GPS Location</h2>
+        <div className="space-y-3">
+          <h2 className="text-base md:text-lg font-semibold">GPS Location</h2>
           <GpsCapture value={gps} onChange={setGps} />
         </div>
 
         {/* Photos */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Photos</h2>
+        <div className="space-y-3">
+          <h2 className="text-base md:text-lg font-semibold">Photos</h2>
           <PhotoCapture photos={photos} onChange={setPhotos} maxPhotos={20} />
         </div>
 
@@ -204,7 +202,7 @@ export function ActivityFormWrapper({
               <FormControl>
                 <Textarea
                   placeholder="Additional notes..."
-                  className="min-h-[100px]"
+                  className="min-h-[80px]"
                   {...field}
                 />
               </FormControl>
@@ -213,8 +211,9 @@ export function ActivityFormWrapper({
           )}
         />
 
-        <div className="flex gap-4">
-          <Button type="submit" disabled={isLoading}>
+        {/* Sticky submit on mobile */}
+        <div className="flex gap-3 sticky bottom-0 bg-background py-3 -mx-3 px-3 md:relative md:mx-0 md:px-0 md:py-0 border-t md:border-0">
+          <Button type="submit" disabled={isLoading} className="flex-1 md:flex-none min-h-[44px]">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Submit Activity
           </Button>
@@ -222,6 +221,7 @@ export function ActivityFormWrapper({
             type="button"
             variant="outline"
             onClick={() => form.reset()}
+            className="min-h-[44px]"
           >
             Reset
           </Button>

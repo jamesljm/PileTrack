@@ -24,20 +24,26 @@ export default function SitesPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-        <div><h1 className="text-2xl font-bold">Sites</h1><p className="text-muted-foreground">Manage your construction sites</p></div>
-        <Link href="/sites/new"><Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Site</Button></Link>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-lg md:text-2xl font-bold">Sites</h1>
+        <Link href="/sites/new">
+          <Button size="sm" className="h-9">
+            <Plus className="mr-1.5 h-4 w-4" />
+            <span className="hidden sm:inline">New Site</span>
+            <span className="sm:hidden">New</span>
+          </Button>
+        </Link>
       </div>
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search sites..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Search sites..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
         </div>
         <Select value={status} onValueChange={(v) => setStatus(v === "all" ? "" : v)}>
-          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+          <SelectTrigger className="w-[120px] sm:w-[160px] h-9"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             <SelectItem value="ACTIVE">Active</SelectItem>
             <SelectItem value="INACTIVE">Inactive</SelectItem>
             <SelectItem value="COMPLETED">Completed</SelectItem>
@@ -45,7 +51,7 @@ export default function SitesPage() {
         </Select>
       </div>
       {isLoading ? <CardsSkeleton count={6} /> : data?.data?.length ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {data.data.map((site) => (<SiteCard key={site.id} id={site.id} name={site.name} code={site.code} status={site.status} clientName={site.clientName} />))}
         </div>
       ) : <EmptyState title="No sites found" description="Try adjusting your search or filter criteria." />}

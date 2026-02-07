@@ -72,20 +72,17 @@ export function TransferForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <FormField
             control={form.control}
             name="fromSiteId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>From Site</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="min-h-[44px]">
                       <SelectValue placeholder="Select source site" />
                     </SelectTrigger>
                   </FormControl>
@@ -101,19 +98,15 @@ export function TransferForm({
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="toSiteId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>To Site</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="min-h-[44px]">
                       <SelectValue placeholder="Select destination site" />
                     </SelectTrigger>
                   </FormControl>
@@ -131,39 +124,30 @@ export function TransferForm({
           />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Transfer Items</h3>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() =>
-                append({ type: "equipment", equipmentId: "", quantity: 1 })
-              }
+              className="min-h-[44px]"
+              onClick={() => append({ type: "equipment", equipmentId: "", quantity: 1 })}
             >
-              <Plus className="h-4 w-4 mr-1" />
-              Add Item
+              <Plus className="h-4 w-4 mr-1" /> Add Item
             </Button>
           </div>
-
           {fields.map((field, index) => (
-            <div
-              key={field.id}
-              className="flex items-end gap-3 p-3 border rounded-md"
-            >
+            <div key={field.id} className="flex items-end gap-2 p-3 border rounded-md">
               <FormField
                 control={form.control}
                 name={`items.${index}.type`}
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel>Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+                    <FormLabel className="text-xs">Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="min-h-[44px]">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
@@ -176,25 +160,24 @@ export function TransferForm({
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name={`items.${index}.quantity`}
                 render={({ field }) => (
-                  <FormItem className="w-24">
-                    <FormLabel>Quantity</FormLabel>
+                  <FormItem className="w-20">
+                    <FormLabel className="text-xs">Qty</FormLabel>
                     <FormControl>
-                      <Input type="number" min={1} {...field} />
+                      <Input type="number" min={1} className="min-h-[44px]" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
+                className="min-h-[44px] min-w-[44px]"
                 onClick={() => remove(index)}
                 disabled={fields.length <= 1}
               >
@@ -211,16 +194,16 @@ export function TransferForm({
             <FormItem>
               <FormLabel>Notes</FormLabel>
               <FormControl>
-                <Textarea placeholder="Additional notes..." {...field} />
+                <Textarea placeholder="Additional notes..." className="min-h-[80px]" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading} className="w-full md:w-auto min-h-[44px]">
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Submit Transfer Request
+          Submit Transfer
         </Button>
       </form>
     </Form>

@@ -22,8 +22,8 @@ export default function NewEquipmentPage({ params }: { params: Promise<{ siteId:
   };
 
   return (
-    <div className="space-y-6">
-      <div><h1 className="text-2xl font-bold">Add Equipment</h1><p className="text-muted-foreground">Add new equipment to this site</p></div>
+    <div className="space-y-4">
+      <h1 className="text-lg md:text-2xl font-bold">Add Equipment</h1>
       <EquipmentForm onSubmit={handleSubmit} isLoading={createEquipment.isPending} />
     </div>
   );

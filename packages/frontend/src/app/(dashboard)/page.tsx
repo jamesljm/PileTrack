@@ -27,30 +27,27 @@ export default function DashboardPage() {
   const totalEquipment = equipmentData?.pagination?.totalItems ?? 0;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your construction operations</p>
-      </div>
+    <div className="space-y-4">
+      <h1 className="text-lg md:text-2xl font-bold">Dashboard</h1>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         <Link href="/sites">
-          <Button variant="outline" className="w-full h-auto py-3 flex flex-col items-center gap-1">
+          <Button variant="outline" className="w-full h-auto py-3 flex flex-col items-center gap-1 active:bg-accent/50">
             <Plus className="h-5 w-5" />
             <span className="text-xs">New Activity</span>
           </Button>
         </Link>
         <Link href="/equipment/scan">
-          <Button variant="outline" className="w-full h-auto py-3 flex flex-col items-center gap-1">
+          <Button variant="outline" className="w-full h-auto py-3 flex flex-col items-center gap-1 active:bg-accent/50">
             <QrCode className="h-5 w-5" />
             <span className="text-xs">Scan QR</span>
           </Button>
         </Link>
         <Link href="/sites">
-          <Button variant="outline" className="w-full h-auto py-3 flex flex-col items-center gap-1">
+          <Button variant="outline" className="w-full h-auto py-3 flex flex-col items-center gap-1 active:bg-accent/50">
             <ArrowLeftRight className="h-5 w-5" />
-            <span className="text-xs">New Transfer</span>
+            <span className="text-xs">Transfer</span>
           </Button>
         </Link>
       </div>
@@ -59,15 +56,15 @@ export default function DashboardPage() {
       {sitesLoading ? (
         <CardsSkeleton count={4} />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={MapPin} label="Total Sites" value={totalSites} />
-          <StatCard icon={Activity} label="Activities Today" value={totalActivitiesToday} />
-          <StatCard icon={CheckSquare} label="Pending Approvals" value={pendingApprovals} />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
+          <StatCard icon={MapPin} label="Sites" value={totalSites} />
+          <StatCard icon={Activity} label="Activities" value={totalActivitiesToday} />
+          <StatCard icon={CheckSquare} label="Approvals" value={pendingApprovals} />
           <StatCard icon={Wrench} label="Equipment" value={totalEquipment} />
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent Activities */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">

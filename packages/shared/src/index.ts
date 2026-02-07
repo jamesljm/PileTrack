@@ -7,9 +7,13 @@ export {
   ActivityStatus,
   EquipmentStatus,
   EquipmentCategory,
+  ServiceType,
+  EquipmentCondition,
   TransferStatus,
   SyncAction,
   NotificationType,
+  HoldPointType,
+  HoldPointStatus,
 } from "./enums";
 
 // ─── Schemas: Common ─────────────────────────────────────────────────────────
@@ -102,6 +106,9 @@ export {
 } from "./schemas/activity-details";
 export type {
   BoredPilingDetails,
+  ConcreteTruck,
+  StageTimings,
+  EquipmentUsedEntry,
   MicropilingDetails,
   DiaphragmWallDetails,
   SheetPilingDetails,
@@ -111,6 +118,16 @@ export type {
   GroundAnchorDetails,
   CaissonPileDetails,
 } from "./schemas/activity-details";
+
+// ─── Schemas: Hold Point ─────────────────────────────────────────────────────
+export {
+  signHoldPointSchema,
+  rejectHoldPointSchema,
+} from "./schemas/hold-point.schema";
+export type {
+  SignHoldPointInput,
+  RejectHoldPointInput,
+} from "./schemas/hold-point.schema";
 
 // ─── Schemas: Equipment ──────────────────────────────────────────────────────
 export {
@@ -123,6 +140,18 @@ export type {
   UpdateEquipmentInput,
   EquipmentFilter,
 } from "./schemas/equipment.schema";
+
+// ─── Schemas: Service Record ────────────────────────────────────────────────
+export {
+  createServiceRecordSchema,
+  updateServiceRecordSchema,
+  serviceRecordFilterSchema,
+} from "./schemas/service-record.schema";
+export type {
+  CreateServiceRecordInput,
+  UpdateServiceRecordInput,
+  ServiceRecordFilter,
+} from "./schemas/service-record.schema";
 
 // ─── Schemas: Material ───────────────────────────────────────────────────────
 export {
@@ -173,7 +202,16 @@ export type {
 export type { User, UserSummary } from "./types";
 export type { Site, SiteSummary, SiteWithUsers } from "./types";
 export type { ActivityRecord, ActivitySummary } from "./types";
-export type { Equipment } from "./types";
+export type {
+  Equipment,
+  ServiceRecord,
+  EquipmentSiteHistory,
+  EquipmentUsageEntry,
+  EquipmentUsageSummary,
+  EquipmentStats,
+  ServiceCostSummary,
+  FleetStats,
+} from "./types";
 export type { Material } from "./types";
 export type { Transfer, TransferItem, TransferWithItems } from "./types";
 

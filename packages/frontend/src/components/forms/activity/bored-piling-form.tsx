@@ -1,8 +1,11 @@
 "use client";
 
-import type { Control } from "react-hook-form";
+import { useCallback, useMemo } from "react";
+import type { Control, UseFormSetValue, UseFormWatch } from "react-hook-form";
+import { useFieldArray, useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   FormControl,
   FormField,
@@ -11,155 +14,484 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CollapsibleSection } from "@/components/shared/collapsible-section";
+import { OverconsumptionBadge } from "@/components/shared/overconsumption-badge";
+import { useEquipment } from "@/queries/use-equipment";
+import { Plus, Trash2 } from "lucide-react";
 
 interface BoredPilingFormProps {
   control: Control<any>;
+  siteId?: string;
 }
 
-export function BoredPilingForm({ control }: BoredPilingFormProps) {
+function calcTheoreticalVolume(diameterMm: number, depthM: number): number {
+  const r = diameterMm / 2000;
+  return Math.PI * r * r * depthM;
+}
+
+function calcStageDuration(start?: string, end?: string): string {
+  if (!start || !end) return "—";
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const mins = (eh! * 60 + em!) - (sh! * 60 + sm!);
+  if (mins < 0) return "—";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}h ${m}m`;
+}
+
+export function BoredPilingForm({ control, siteId }: BoredPilingFormProps) {
+  const { watch, setValue, getValues } = useFormContext();
+  const { data: equipmentData } = useEquipment({ siteId, pageSize: 100 });
+  const siteEquipment = (equipmentData as any)?.data ?? [];
+
+  // Watch for overconsumption calculations
+  const diameter = watch("diameter");
+  const depth = watch("depth");
+  const concreteVolume = watch("concreteVolume");
+  const concreteTrucks = watch("concreteTrucks") || [];
+
+  // Compute theoretical + overconsumption
+  const theoretical = useMemo(() => {
+    if (diameter > 0 && depth > 0) return calcTheoreticalVolume(diameter, depth);
+    return 0;
+  }, [diameter, depth]);
+
+  const truckTotal = useMemo(() => {
+    return (concreteTrucks as Array<{ volume: number; accepted: boolean }>)
+      .filter((t) => t.accepted !== false)
+      .reduce((sum: number, t) => sum + (Number(t.volume) || 0), 0);
+  }, [concreteTrucks]);
+
+  const actualVolume = concreteVolume || truckTotal || 0;
+  const overconsumption = theoretical > 0 ? ((actualVolume - theoretical) / theoretical) * 100 : 0;
+
+  // Stage timing watchers
+  const stageTimings = watch("stageTimings") || {};
+  const totalCycleMinutes = useMemo(() => {
+    let total = 0;
+    for (const stage of ["setup", "boring", "cage", "concreting"]) {
+      const s = stageTimings[stage];
+      if (s?.start && s?.end) {
+        const [sh, sm] = s.start.split(":").map(Number);
+        const [eh, em] = s.end.split(":").map(Number);
+        const mins = (eh * 60 + em) - (sh * 60 + sm);
+        if (mins > 0) total += mins;
+      }
+    }
+    return total;
+  }, [stageTimings]);
+
+  const addTruck = useCallback(() => {
+    const trucks = getValues("concreteTrucks") || [];
+    setValue("concreteTrucks", [
+      ...trucks,
+      { ticketNo: "", volume: 0, slump: 0, temperature: undefined, arrivalTime: "", accepted: true },
+    ]);
+  }, [getValues, setValue]);
+
+  const removeTruck = useCallback(
+    (index: number) => {
+      const trucks = getValues("concreteTrucks") || [];
+      setValue(
+        "concreteTrucks",
+        trucks.filter((_: unknown, i: number) => i !== index),
+      );
+    },
+    [getValues, setValue],
+  );
+
+  const addEquipment = useCallback(() => {
+    const eq = getValues("equipmentUsed") || [];
+    setValue("equipmentUsed", [
+      ...eq,
+      { equipmentId: "", name: "", hours: 0, isDowntime: false, downtimeReason: "" },
+    ]);
+  }, [getValues, setValue]);
+
+  const removeEquipment = useCallback(
+    (index: number) => {
+      const eq = getValues("equipmentUsed") || [];
+      setValue(
+        "equipmentUsed",
+        eq.filter((_: unknown, i: number) => i !== index),
+      );
+    },
+    [getValues, setValue],
+  );
+
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField control={control} name="pileId" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Pile ID</FormLabel>
-            <FormControl><Input placeholder="BP-001" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={control} name="diameter" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Diameter (mm)</FormLabel>
-            <FormControl><Input type="number" placeholder="1200" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-      </div>
+    <div className="space-y-3">
+      {/* Section 1: Pile Identity — always open */}
+      <CollapsibleSection title="Pile Identity" defaultOpen>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField control={control} name="pileId" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Pile ID</FormLabel>
+              <FormControl><Input placeholder="BP-001" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="pileDesignRef" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Pile Design Ref</FormLabel>
+              <FormControl><Input placeholder="Optional" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <FormField control={control} name="diameter" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Diameter (mm)</FormLabel>
+              <FormControl><Input type="number" placeholder="1200" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="depth" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Total Depth (m)</FormLabel>
+              <FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+      </CollapsibleSection>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <FormField control={control} name="depth" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Total Depth (m)</FormLabel>
-            <FormControl><Input type="number" step="0.1" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={control} name="startDepth" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Start Depth (m)</FormLabel>
-            <FormControl><Input type="number" step="0.1" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={control} name="finalDepth" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Final Depth (m)</FormLabel>
-            <FormControl><Input type="number" step="0.1" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-      </div>
+      {/* Section 2: Depths & Levels */}
+      <CollapsibleSection title="Depths & Levels">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <FormField control={control} name="startDepth" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Start Depth (m)</FormLabel>
+              <FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="finalDepth" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Final Depth (m)</FormLabel>
+              <FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="cutOffLevel" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cut-off Level (mPD)</FormLabel>
+              <FormControl><Input type="number" step="0.01" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <FormField control={control} name="platformLevel" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Platform Level (mPD)</FormLabel>
+              <FormControl><Input type="number" step="0.01" className="min-h-[44px]" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="toeLevel" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Toe Level (mPD)</FormLabel>
+              <FormControl><Input type="number" step="0.01" className="min-h-[44px]" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="groundwaterLevel" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Groundwater Level (m)</FormLabel>
+              <FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <FormField control={control} name="casingDepth" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Casing Depth (m)</FormLabel>
+              <FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="tremieLength" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tremie Length (m)</FormLabel>
+              <FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+      </CollapsibleSection>
 
-      <FormField control={control} name="reinforcementCage" render={({ field }) => (
-        <FormItem>
-          <FormLabel>Reinforcement Cage Details</FormLabel>
-          <FormControl><Input placeholder="e.g. T40-12 bars, 300mm spacing" {...field} /></FormControl>
-          <FormMessage />
-        </FormItem>
-      )} />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <FormField control={control} name="concreteVolume" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Concrete Volume (m3)</FormLabel>
-            <FormControl><Input type="number" step="0.1" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={control} name="concreteGrade" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Concrete Grade</FormLabel>
-            <FormControl><Input placeholder="C40" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
+      {/* Section 3: Concrete — KEY section */}
+      <CollapsibleSection
+        title="Concrete"
+        defaultOpen
+        badge={
+          theoretical > 0 && actualVolume > 0 ? (
+            <OverconsumptionBadge
+              theoreticalVolume={theoretical}
+              actualVolume={actualVolume}
+              overconsumptionPct={overconsumption}
+            />
+          ) : null
+        }
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField control={control} name="concreteGrade" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Concrete Grade</FormLabel>
+              <FormControl><Input placeholder="C40" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="concreteVolume" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Actual Total Volume (m³)</FormLabel>
+              <FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
+              <FormDescription>
+                {truckTotal > 0 && `Truck total: ${truckTotal.toFixed(2)} m³`}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
         <FormField control={control} name="slumpTest" render={({ field }) => (
-          <FormItem>
+          <FormItem className="mt-4">
             <FormLabel>Slump Test (mm)</FormLabel>
-            <FormControl><Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
+            <FormControl><Input type="number" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <FormField control={control} name="casingDepth" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Casing Depth (m)</FormLabel>
-            <FormControl><Input type="number" step="0.1" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={control} name="tremieLength" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Tremie Length (m)</FormLabel>
-            <FormControl><Input type="number" step="0.1" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={control} name="cutOffLevel" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Cut-off Level (mPD)</FormLabel>
-            <FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-      </div>
+        {/* Theoretical display */}
+        {theoretical > 0 && (
+          <div className="mt-4 p-3 bg-muted rounded-md text-sm">
+            <span className="font-medium">Theoretical: {theoretical.toFixed(2)} m³</span>
+            {actualVolume > 0 && (
+              <>
+                <span className="mx-2">|</span>
+                <span className="font-medium">Actual: {actualVolume.toFixed(2)} m³</span>
+                <span className="mx-2">|</span>
+                <span className={`font-bold ${overconsumption > 10 ? "text-red-600" : overconsumption > 5 ? "text-amber-600" : "text-green-600"}`}>
+                  Overconsumption: {overconsumption.toFixed(1)}%
+                </span>
+              </>
+            )}
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField control={control} name="cubeTestRef" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Cube Test Reference</FormLabel>
-            <FormControl><Input placeholder="Optional" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={control} name="casingType" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Casing Type</FormLabel>
-            <FormControl><Input placeholder="Optional" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-      </div>
+        {/* Concrete Trucks */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Concrete Trucks</span>
+            <Button type="button" variant="outline" size="sm" onClick={addTruck} className="min-h-[44px]">
+              <Plus className="h-4 w-4 mr-1" /> Add Truck
+            </Button>
+          </div>
+          {concreteTrucks.map((_: unknown, index: number) => (
+            <div key={index} className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-2 p-2 border rounded items-end">
+              <FormField control={control} name={`concreteTrucks.${index}.ticketNo`} render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">Ticket #</FormLabel><FormControl><Input className="min-h-[44px]" {...field} /></FormControl></FormItem>
+              )} />
+              <FormField control={control} name={`concreteTrucks.${index}.volume`} render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">Volume (m³)</FormLabel><FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl></FormItem>
+              )} />
+              <FormField control={control} name={`concreteTrucks.${index}.slump`} render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">Slump (mm)</FormLabel><FormControl><Input type="number" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl></FormItem>
+              )} />
+              <FormField control={control} name={`concreteTrucks.${index}.temperature`} render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">Temp (°C)</FormLabel><FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl></FormItem>
+              )} />
+              <FormField control={control} name={`concreteTrucks.${index}.arrivalTime`} render={({ field }) => (
+                <FormItem><FormLabel className="text-xs">Arrival</FormLabel><FormControl><Input type="time" className="min-h-[44px]" {...field} /></FormControl></FormItem>
+              )} />
+              <Button type="button" variant="ghost" size="sm" onClick={() => removeTruck(index)} className="min-h-[44px] text-red-500">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          {concreteTrucks.length > 0 && (
+            <div className="text-sm text-right font-medium mt-1">Running Total: {truckTotal.toFixed(2)} m³</div>
+          )}
+        </div>
+      </CollapsibleSection>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField control={control} name="socketRockLength" render={({ field }) => (
+      {/* Section 4: Reinforcement & Slurry */}
+      <CollapsibleSection title="Reinforcement & Slurry">
+        <FormField control={control} name="reinforcementCage" render={({ field }) => (
           <FormItem>
-            <FormLabel>Socket Rock Length (m)</FormLabel>
-            <FormDescription>Optional</FormDescription>
-            <FormControl><Input type="number" step="0.1" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl>
+            <FormLabel>Reinforcement Cage Details</FormLabel>
+            <FormControl><Input placeholder="e.g. T40-12 bars, 300mm spacing" className="min-h-[44px]" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
-        <FormField control={control} name="groundwaterLevel" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Groundwater Level (m)</FormLabel>
-            <FormDescription>Optional</FormDescription>
-            <FormControl><Input type="number" step="0.1" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <FormField control={control} name="cageWeight" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cage Weight (tonnes)</FormLabel>
+              <FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="cageLength" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cage Length (m)</FormLabel>
+              <FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <FormField control={control} name="cubeTestRef" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cube Test Reference</FormLabel>
+              <FormControl><Input placeholder="Optional" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="bentoniteUsed" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Bentonite Used (litres)</FormLabel>
+              <FormControl><Input type="number" step="1" className="min-h-[44px]" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <FormField control={control} name="slurryDensityStart" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Slurry Density Start (g/cm³)</FormLabel>
+              <FormControl><Input type="number" step="0.01" className="min-h-[44px]" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="slurryDensityEnd" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Slurry Density End (g/cm³)</FormLabel>
+              <FormControl><Input type="number" step="0.01" className="min-h-[44px]" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+      </CollapsibleSection>
 
-      <FormField control={control} name="boreholeLog" render={({ field }) => (
-        <FormItem>
-          <FormLabel>Borehole Log</FormLabel>
-          <FormDescription>Optional</FormDescription>
-          <FormControl><Textarea placeholder="Describe borehole log..." {...field} /></FormControl>
-          <FormMessage />
-        </FormItem>
-      )} />
+      {/* Section 5: Timing */}
+      <CollapsibleSection title="Timing">
+        {(["setup", "boring", "cage", "concreting"] as const).map((stage) => (
+          <div key={stage} className="grid grid-cols-3 gap-2 mb-3 items-end">
+            <span className="text-sm font-medium capitalize self-center">{stage === "cage" ? "Cage Installation" : stage}</span>
+            <FormField control={control} name={`stageTimings.${stage}.start`} render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Start</FormLabel>
+                <FormControl><Input type="time" className="min-h-[44px]" {...field} /></FormControl>
+              </FormItem>
+            )} />
+            <FormField control={control} name={`stageTimings.${stage}.end`} render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">End</FormLabel>
+                <FormControl><Input type="time" className="min-h-[44px]" {...field} /></FormControl>
+                <FormDescription className="text-xs">
+                  {calcStageDuration(stageTimings[stage]?.start, stageTimings[stage]?.end)}
+                </FormDescription>
+              </FormItem>
+            )} />
+          </div>
+        ))}
+        {totalCycleMinutes > 0 && (
+          <div className="mt-2 p-2 bg-muted rounded-md text-sm font-medium">
+            Total Cycle Time: {Math.floor(totalCycleMinutes / 60)}h {totalCycleMinutes % 60}m
+          </div>
+        )}
+      </CollapsibleSection>
+
+      {/* Section 6: Equipment Used */}
+      <CollapsibleSection title="Equipment Used">
+        <div className="flex justify-end mb-2">
+          <Button type="button" variant="outline" size="sm" onClick={addEquipment} className="min-h-[44px]">
+            <Plus className="h-4 w-4 mr-1" /> Add Equipment
+          </Button>
+        </div>
+        {(watch("equipmentUsed") || []).map((_: unknown, index: number) => (
+          <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-2 p-2 border rounded items-end">
+            <FormField control={control} name={`equipmentUsed.${index}.name`} render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Equipment</FormLabel>
+                <Select
+                  onValueChange={(val) => {
+                    const eq = siteEquipment.find((e: any) => e.id === val);
+                    if (eq) {
+                      field.onChange(eq.name);
+                      setValue(`equipmentUsed.${index}.equipmentId`, eq.id);
+                    } else {
+                      field.onChange(val);
+                    }
+                  }}
+                  defaultValue={field.value}
+                >
+                  <FormControl><SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Select equipment" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {siteEquipment.map((eq: any) => (
+                      <SelectItem key={eq.id} value={eq.id}>{eq.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )} />
+            <FormField control={control} name={`equipmentUsed.${index}.hours`} render={({ field }) => (
+              <FormItem><FormLabel className="text-xs">Hours</FormLabel><FormControl><Input type="number" step="0.5" className="min-h-[44px]" {...field} onChange={e => field.onChange(Number(e.target.value))} /></FormControl></FormItem>
+            )} />
+            <FormField control={control} name={`equipmentUsed.${index}.isDowntime`} render={({ field }) => (
+              <FormItem className="flex flex-row items-end space-x-2 space-y-0 pb-2">
+                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                <FormLabel className="text-xs">Downtime?</FormLabel>
+              </FormItem>
+            )} />
+            <FormField control={control} name={`equipmentUsed.${index}.downtimeReason`} render={({ field }) => (
+              <FormItem><FormLabel className="text-xs">Reason</FormLabel><FormControl><Input className="min-h-[44px]" placeholder="If downtime..." {...field} /></FormControl></FormItem>
+            )} />
+            <Button type="button" variant="ghost" size="sm" onClick={() => removeEquipment(index)} className="min-h-[44px] text-red-500">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+      </CollapsibleSection>
+
+      {/* Section 7: Additional — collapsed by default */}
+      <CollapsibleSection title="Additional">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField control={control} name="socketRockLength" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Socket Rock Length (m)</FormLabel>
+              <FormControl><Input type="number" step="0.1" className="min-h-[44px]" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={control} name="casingType" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Casing Type</FormLabel>
+              <FormControl><Input placeholder="Optional" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+        <FormField control={control} name="boreholeLog" render={({ field }) => (
+          <FormItem className="mt-4">
+            <FormLabel>Borehole Log</FormLabel>
+            <FormControl><Textarea placeholder="Describe borehole log..." className="min-h-[100px]" {...field} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+      </CollapsibleSection>
     </div>
   );
 }

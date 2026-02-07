@@ -38,12 +38,43 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header";
 import { SITE_STATUS_COLORS } from "@/lib/constants";
-import { Plus, Loader2, Edit, Eye } from "lucide-react";
+import { Plus, Loader2, Edit, Eye, ChevronRight, MapPin } from "lucide-react";
 import { SiteStatus } from "@piletrack/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Site, PaginatedResponse, ApiResponse } from "@piletrack/shared";
 import { format } from "date-fns";
 import Link from "next/link";
+
+function SiteMobileCard({ item }: { item: Site }) {
+  const statusColor = SITE_STATUS_COLORS[item.status as keyof typeof SITE_STATUS_COLORS] ?? "";
+
+  return (
+    <Link href={`/sites/${item.id}`} className="block">
+      <div className="flex items-center gap-3 rounded-lg border p-3 active:bg-accent/50 transition-colors">
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold truncate">{item.name}</p>
+            <Badge className={`text-[10px] px-1.5 py-0 shrink-0 ${statusColor}`}>
+              {item.status}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-mono">{item.code}</span>
+            <span>-</span>
+            <span className="truncate">{item.clientName}</span>
+          </div>
+          {item.address && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">{item.address}</span>
+            </div>
+          )}
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+      </div>
+    </Link>
+  );
+}
 
 const createSiteSchema = z.object({
   name: z.string().min(1, "Site name is required").max(200),
@@ -192,20 +223,15 @@ export default function AdminSitesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Site Management</h1>
-          <p className="text-muted-foreground">
-            Manage all construction sites
-          </p>
-        </div>
-
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-lg md:text-2xl font-bold">Sites</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Site
+            <Button size="sm" className="h-9">
+              <Plus className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">New Site</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -467,6 +493,7 @@ export default function AdminSitesPage() {
               ],
             },
           ]}
+          renderMobileCard={(item) => <SiteMobileCard item={item as Site} />}
         />
       )}
     </div>

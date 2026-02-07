@@ -3,7 +3,7 @@ import { prisma } from "../config/database";
 import { equipmentRepository } from "../repositories/equipment.repository";
 import { NotFoundError, ConflictError, ValidationError } from "../utils/api-error";
 import { generateQRCode } from "../utils/qr-generator";
-import type { Equipment, EquipmentCategory, EquipmentStatus } from "@prisma/client";
+import type { Equipment, EquipmentCategory, EquipmentStatus, EquipmentCondition } from "@prisma/client";
 import { logger } from "../config/logger";
 
 export interface CreateEquipmentInput {
@@ -12,11 +12,17 @@ export interface CreateEquipmentInput {
   category?: EquipmentCategory;
   serialNumber?: string;
   status?: EquipmentStatus;
+  condition?: EquipmentCondition;
   manufacturer?: string;
   model?: string;
   yearManufactured?: number;
   lastServiceDate?: Date;
   nextServiceDate?: Date;
+  serviceIntervalHours?: number;
+  purchaseDate?: Date;
+  purchasePrice?: number;
+  dailyRate?: number;
+  insuranceExpiry?: Date;
   notes?: string;
 }
 
@@ -26,11 +32,17 @@ export interface UpdateEquipmentInput {
   category?: EquipmentCategory;
   serialNumber?: string;
   status?: EquipmentStatus;
+  condition?: EquipmentCondition;
   manufacturer?: string;
   model?: string;
   yearManufactured?: number;
   lastServiceDate?: Date;
   nextServiceDate?: Date;
+  serviceIntervalHours?: number | null;
+  purchaseDate?: Date | null;
+  purchasePrice?: number | null;
+  dailyRate?: number | null;
+  insuranceExpiry?: Date | null;
   notes?: string;
 }
 
@@ -82,17 +94,33 @@ class EquipmentService {
         serialNumber: input.serialNumber,
         qrCode,
         status: input.status ?? "AVAILABLE",
+        condition: input.condition ?? "GOOD",
         manufacturer: input.manufacturer,
         model: input.model,
         yearManufactured: input.yearManufactured,
         lastServiceDate: input.lastServiceDate,
         nextServiceDate: input.nextServiceDate,
+        serviceIntervalHours: input.serviceIntervalHours,
+        purchaseDate: input.purchaseDate,
+        purchasePrice: input.purchasePrice,
+        dailyRate: input.dailyRate,
+        insuranceExpiry: input.insuranceExpiry,
         notes: input.notes,
       },
       include: {
         site: { select: { id: true, name: true, code: true } },
       },
     });
+
+    // Create initial site history record if assigned to a site
+    if (input.siteId) {
+      await prisma.equipmentSiteHistory.create({
+        data: {
+          equipmentId: equipment.id,
+          siteId: input.siteId,
+        },
+      });
+    }
 
     logger.info({ equipmentId: equipment.id, name: equipment.name }, "Equipment created");
     return equipment;
@@ -104,12 +132,17 @@ class EquipmentService {
       throw new NotFoundError("Equipment");
     }
 
-    if (input.serialNumber && input.serialNumber !== (existing as Equipment).serialNumber) {
+    const eq = existing as Equipment;
+
+    if (input.serialNumber && input.serialNumber !== eq.serialNumber) {
       const conflict = await equipmentRepository.findBySerialNumber(input.serialNumber);
       if (conflict) {
         throw new ConflictError(`Equipment with serial number '${input.serialNumber}' already exists`);
       }
     }
+
+    // Track site changes for history
+    const siteChanged = input.siteId !== undefined && input.siteId !== eq.siteId;
 
     const equipment = await prisma.equipment.update({
       where: { id },
@@ -118,6 +151,31 @@ class EquipmentService {
         site: { select: { id: true, name: true, code: true } },
       },
     });
+
+    if (siteChanged) {
+      // Close old site history record
+      if (eq.siteId) {
+        const openRecord = await prisma.equipmentSiteHistory.findFirst({
+          where: { equipmentId: id, siteId: eq.siteId, removedAt: null },
+          orderBy: { assignedAt: "desc" },
+        });
+        if (openRecord) {
+          await prisma.equipmentSiteHistory.update({
+            where: { id: openRecord.id },
+            data: { removedAt: new Date() },
+          });
+        }
+      }
+      // Create new site history record
+      if (input.siteId) {
+        await prisma.equipmentSiteHistory.create({
+          data: {
+            equipmentId: id,
+            siteId: input.siteId,
+          },
+        });
+      }
+    }
 
     logger.info({ equipmentId: id }, "Equipment updated");
     return equipment;
@@ -210,6 +268,97 @@ class EquipmentService {
     pagination: { skip: number; take: number } = { skip: 0, take: 20 },
   ): Promise<{ data: Equipment[]; total: number }> {
     return equipmentRepository.findServiceDue(beforeDate, pagination);
+  }
+
+  async getFleetStats(): Promise<{
+    totalCount: number;
+    byStatus: Record<string, number>;
+    byCategory: Record<string, number>;
+    byCondition: Record<string, number>;
+    serviceOverdueCount: number;
+    totalFleetValue: number;
+    avgUtilizationRate: number;
+    topUsed: Array<{ id: string; name: string; code: string; totalUsageHours: number }>;
+    serviceDueSoon: Array<{ id: string; name: string; code: string; nextServiceDate: string | null }>;
+  }> {
+    const allEquipment = await prisma.equipment.findMany({
+      where: { deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        category: true,
+        condition: true,
+        totalUsageHours: true,
+        purchasePrice: true,
+        nextServiceDate: true,
+        qrCode: true,
+      },
+    });
+
+    const byStatus: Record<string, number> = {};
+    const byCategory: Record<string, number> = {};
+    const byCondition: Record<string, number> = {};
+    let totalFleetValue = 0;
+    let serviceOverdueCount = 0;
+    const now = new Date();
+
+    for (const eq of allEquipment) {
+      byStatus[eq.status] = (byStatus[eq.status] ?? 0) + 1;
+      byCategory[eq.category] = (byCategory[eq.category] ?? 0) + 1;
+      byCondition[eq.condition] = (byCondition[eq.condition] ?? 0) + 1;
+
+      if (eq.purchasePrice) totalFleetValue += eq.purchasePrice;
+
+      if (eq.nextServiceDate && new Date(eq.nextServiceDate) < now) {
+        serviceOverdueCount++;
+      }
+    }
+
+    // Top 5 most used
+    const topUsed = [...allEquipment]
+      .sort((a, b) => b.totalUsageHours - a.totalUsageHours)
+      .slice(0, 5)
+      .map((eq) => ({
+        id: eq.id,
+        name: eq.name,
+        code: eq.qrCode ?? "",
+        totalUsageHours: eq.totalUsageHours,
+      }));
+
+    // Top 5 service due soon (not yet overdue, earliest first)
+    const serviceDueSoon = [...allEquipment]
+      .filter((eq) => eq.nextServiceDate && new Date(eq.nextServiceDate) >= now)
+      .sort((a, b) => {
+        const dateA = a.nextServiceDate ? new Date(a.nextServiceDate).getTime() : Infinity;
+        const dateB = b.nextServiceDate ? new Date(b.nextServiceDate).getTime() : Infinity;
+        return dateA - dateB;
+      })
+      .slice(0, 5)
+      .map((eq) => ({
+        id: eq.id,
+        name: eq.name,
+        code: eq.qrCode ?? "",
+        nextServiceDate: eq.nextServiceDate?.toISOString() ?? null,
+      }));
+
+    // Average utilization rate
+    const totalHours = allEquipment.reduce((sum, eq) => sum + eq.totalUsageHours, 0);
+    const avgUtilizationRate = allEquipment.length > 0
+      ? totalHours / allEquipment.length
+      : 0;
+
+    return {
+      totalCount: allEquipment.length,
+      byStatus,
+      byCategory,
+      byCondition,
+      serviceOverdueCount,
+      totalFleetValue,
+      avgUtilizationRate: Math.round(avgUtilizationRate * 10) / 10,
+      topUsed,
+      serviceDueSoon,
+    };
   }
 
   async getHistory(id: string): Promise<unknown[]> {

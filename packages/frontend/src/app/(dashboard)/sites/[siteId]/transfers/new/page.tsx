@@ -27,8 +27,8 @@ export default function NewTransferPage({ params }: { params: Promise<{ siteId: 
   if (isLoading) return <FormSkeleton />;
 
   return (
-    <div className="space-y-6">
-      <div><h1 className="text-2xl font-bold">New Transfer</h1><p className="text-muted-foreground">Request equipment or material transfer</p></div>
+    <div className="space-y-4">
+      <h1 className="text-lg md:text-2xl font-bold">New Transfer</h1>
       <TransferForm sites={sitesData?.data ?? []} defaultFromSiteId={siteId} onSubmit={handleSubmit} isLoading={createTransfer.isPending} />
     </div>
   );

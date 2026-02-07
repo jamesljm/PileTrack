@@ -1,5 +1,33 @@
 import { z } from "zod";
 
+const groutTruckSchema = z.object({
+  ticketNo: z.string().min(1).max(50).trim(),
+  volume: z.number().positive().max(5000).describe("Volume in litres"),
+  mixRatio: z.string().max(50).trim().optional(),
+  arrivalTime: z.string().optional(),
+  accepted: z.boolean().default(true),
+});
+
+const stageTimingSchema = z.object({
+  start: z.string().optional(),
+  end: z.string().optional(),
+});
+
+const stageTimingsSchema = z.object({
+  setup: stageTimingSchema.optional(),
+  drilling: stageTimingSchema.optional(),
+  grouting: stageTimingSchema.optional(),
+  reinforcement: stageTimingSchema.optional(),
+});
+
+const equipmentUsedSchema = z.object({
+  equipmentId: z.string().uuid().optional(),
+  name: z.string().min(1).max(200).trim(),
+  hours: z.number().min(0).max(24),
+  isDowntime: z.boolean().default(false),
+  downtimeReason: z.string().max(500).trim().optional(),
+});
+
 export const micropilingSchema = z.object({
   pileId: z
     .string()
@@ -71,6 +99,13 @@ export const micropilingSchema = z.object({
     .max(100, "Drilling method must not exceed 100 characters")
     .trim(),
   flushType: z.enum(["WATER", "AIR", "FOAM", "MUD"]),
+
+  // Enhanced fields
+  theoreticalGroutVolume: z.number().min(0).describe("Theoretical grout volume in litres — auto-calculated").optional(),
+  overconsumptionPct: z.number().describe("Overconsumption percentage — auto-calculated").optional(),
+  groutTrucks: z.array(groutTruckSchema).max(20).optional(),
+  stageTimings: stageTimingsSchema.optional(),
+  equipmentUsed: z.array(equipmentUsedSchema).max(20).optional(),
 });
 
 export type MicropilingDetails = z.infer<typeof micropilingSchema>;

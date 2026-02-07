@@ -55,6 +55,23 @@ enum EquipmentStatus {
   DECOMMISSIONED
 }
 
+enum ServiceType {
+  ROUTINE_MAINTENANCE
+  REPAIR
+  INSPECTION
+  OVERHAUL
+  CALIBRATION
+  BREAKDOWN_REPAIR
+}
+
+enum EquipmentCondition {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  CRITICAL
+}
+
 enum EquipmentCategory {
   PILING_RIG
   CRANE
@@ -80,6 +97,18 @@ enum SyncAction {
   CREATE
   UPDATE
   DELETE
+}
+
+enum HoldPointType {
+  PRE_BORING
+  PRE_CAGE
+  PRE_CONCRETE
+}
+
+enum HoldPointStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum NotificationType {
@@ -123,6 +152,8 @@ model User {
   auditLogs      AuditLog[]
   notifications  Notification[]
   syncLogs       SyncLog[]
+  holdPointSigs  HoldPoint[]      @relation("HoldPointSigner")
+  serviceRecords ServiceRecord[]  @relation("ServiceRecordCreator")
 
   @@index([email])
   @@index([role])
@@ -155,6 +186,7 @@ model Site {
   materials       Material[]
   transfersFrom   Transfer[] @relation("TransferFromSite")
   transfersTo     Transfer[] @relation("TransferToSite")
+  equipmentSiteHistory EquipmentSiteHistory[]
 
   @@index([code])
   @@index([status])
@@ -203,6 +235,7 @@ model ActivityRecord {
   site        Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
   createdBy   User @relation("ActivityCreator", fields: [createdById], references: [id])
   approvedBy  User? @relation("ActivityApprover", fields: [approvedById], references: [id])
+  holdPoints  HoldPoint[]
 
   @@index([siteId])
   @@index([activityType])
@@ -215,27 +248,36 @@ model ActivityRecord {
 }
 
 model Equipment {
-  id              String            @id @default(uuid()) @db.Uuid
-  siteId          String?           @map("site_id") @db.Uuid
-  name            String            @db.VarChar(200)
-  category        EquipmentCategory @default(GENERAL)
-  serialNumber    String?           @unique @map("serial_number") @db.VarChar(100)
-  qrCode          String?           @unique @map("qr_code") @db.VarChar(255)
-  status          EquipmentStatus   @default(AVAILABLE)
-  manufacturer    String?           @db.VarChar(200)
-  model           String?           @db.VarChar(200)
-  yearManufactured Int?             @map("year_manufactured")
-  lastServiceDate DateTime?         @map("last_service_date")
-  nextServiceDate DateTime?         @map("next_service_date")
-  serviceHistory  Json?             @default("[]") @map("service_history")
-  notes           String?           @db.Text
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  deletedAt       DateTime?         @map("deleted_at")
+  id                 String             @id @default(uuid()) @db.Uuid
+  siteId             String?            @map("site_id") @db.Uuid
+  name               String             @db.VarChar(200)
+  category           EquipmentCategory  @default(GENERAL)
+  serialNumber       String?            @unique @map("serial_number") @db.VarChar(100)
+  qrCode             String?            @unique @map("qr_code") @db.VarChar(255)
+  status             EquipmentStatus    @default(AVAILABLE)
+  condition          EquipmentCondition @default(GOOD)
+  manufacturer       String?            @db.VarChar(200)
+  model              String?            @db.VarChar(200)
+  yearManufactured   Int?               @map("year_manufactured")
+  lastServiceDate    DateTime?          @map("last_service_date")
+  nextServiceDate    DateTime?          @map("next_service_date")
+  serviceHistory     Json?              @default("[]") @map("service_history")
+  totalUsageHours    Float              @default(0) @map("total_usage_hours")
+  serviceIntervalHours Float?           @map("service_interval_hours")
+  purchaseDate       DateTime?          @map("purchase_date")
+  purchasePrice      Float?             @map("purchase_price")
+  dailyRate          Float?             @map("daily_rate")
+  insuranceExpiry    DateTime?          @map("insurance_expiry")
+  notes              String?            @db.Text
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  deletedAt          DateTime?          @map("deleted_at")
 
   // Relations
-  site          Site?          @relation(fields: [siteId], references: [id])
-  transferItems TransferItem[]
+  site           Site?                  @relation(fields: [siteId], references: [id])
+  transferItems  TransferItem[]
+  serviceRecords ServiceRecord[]
+  siteHistory    EquipmentSiteHistory[]
 
   @@index([siteId])
   @@index([category])
@@ -245,6 +287,53 @@ model Equipment {
   @@index([nextServiceDate])
   @@index([deletedAt])
   @@map("equipment")
+}
+
+model ServiceRecord {
+  id              String      @id @default(uuid()) @db.Uuid
+  equipmentId     String      @map("equipment_id") @db.Uuid
+  serviceType     ServiceType @map("service_type")
+  serviceDate     DateTime    @map("service_date")
+  description     String      @db.Text
+  performedBy     String      @map("performed_by") @db.VarChar(200)
+  cost            Float?
+  partsReplaced   String?     @map("parts_replaced") @db.Text
+  nextServiceDate DateTime?   @map("next_service_date")
+  meterReading    Float?      @map("meter_reading")
+  notes           String?     @db.Text
+  createdById     String?     @map("created_by_id") @db.Uuid
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  deletedAt       DateTime?   @map("deleted_at")
+
+  // Relations
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  createdBy User?     @relation("ServiceRecordCreator", fields: [createdById], references: [id])
+
+  @@index([equipmentId])
+  @@index([serviceDate])
+  @@index([deletedAt])
+  @@map("service_records")
+}
+
+model EquipmentSiteHistory {
+  id          String    @id @default(uuid()) @db.Uuid
+  equipmentId String    @map("equipment_id") @db.Uuid
+  siteId      String    @map("site_id") @db.Uuid
+  assignedAt  DateTime  @default(now()) @map("assigned_at")
+  removedAt   DateTime? @map("removed_at")
+  transferId  String?   @map("transfer_id") @db.Uuid
+  notes       String?   @db.Text
+
+  // Relations
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  site      Site      @relation(fields: [siteId], references: [id])
+  transfer  Transfer? @relation(fields: [transferId], references: [id])
+
+  @@index([equipmentId])
+  @@index([siteId])
+  @@index([transferId])
+  @@map("equipment_site_history")
 }
 
 model Material {
@@ -294,6 +383,7 @@ model Transfer {
   requestedBy  User           @relation("TransferRequester", fields: [requestedById], references: [id])
   approvedBy   User?          @relation("TransferApprover", fields: [approvedById], references: [id])
   items        TransferItem[]
+  equipmentSiteHistory EquipmentSiteHistory[]
 
   @@index([fromSiteId])
   @@index([toSiteId])
@@ -401,4 +491,29 @@ model RefreshToken {
   @@index([token])
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+model HoldPoint {
+  id             String          @id @default(uuid()) @db.Uuid
+  activityId     String          @map("activity_id") @db.Uuid
+  type           HoldPointType
+  status         HoldPointStatus @default(PENDING)
+  checklist      Json            @default("[]")
+  signedByName   String?         @map("signed_by_name") @db.VarChar(200)
+  signedById     String?         @map("signed_by_id") @db.Uuid
+  signedAt       DateTime?       @map("signed_at")
+  signatureData  String?         @map("signature_data") @db.Text
+  rejectionNotes String?         @map("rejection_notes") @db.Text
+  comments       String?         @db.Text
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  activity       ActivityRecord  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  signedBy       User?           @relation("HoldPointSigner", fields: [signedById], references: [id])
+
+  @@unique([activityId, type])
+  @@index([activityId])
+  @@index([status])
+  @@map("hold_points")
 }

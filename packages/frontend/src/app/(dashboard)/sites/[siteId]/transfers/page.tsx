@@ -18,10 +18,50 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import Link from "next/link";
-import { Plus, Check, Truck, PackageCheck, X, Eye, Loader2 } from "lucide-react";
+import { Plus, Check, Truck, PackageCheck, X, Eye, Loader2, ArrowRight, Package } from "lucide-react";
 import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { TransferWithItems, TransferStatus } from "@piletrack/shared";
+
+function TransferMobileCard({ item, onAction }: { item: TransferWithItems; onAction: (id: string, action: string) => void }) {
+  const statusColor = TRANSFER_STATUS_COLORS[item.status as keyof typeof TRANSFER_STATUS_COLORS] ?? "";
+  const itemCount = item.items?.length ?? 0;
+
+  return (
+    <div className="rounded-lg border p-3 space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex items-center gap-1.5 text-sm font-semibold">
+            <span className="truncate">{item.fromSiteName}</span>
+            <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <span className="truncate">{item.toSiteName}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>{format(new Date(item.createdAt), "dd MMM yyyy")}</span>
+            <span className="flex items-center gap-0.5">
+              <Package className="h-3 w-3" />
+              {itemCount} item{itemCount !== 1 ? "s" : ""}
+            </span>
+          </div>
+        </div>
+        <Badge className={`text-[10px] px-1.5 py-0 shrink-0 ${statusColor}`}>
+          {(item.status as string).replace("_", " ")}
+        </Badge>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground">by {item.requestedByName}</span>
+        <div className="flex items-center gap-1">
+          <TransferActionButton transfer={item} onAction={onAction} />
+          <Link href={`/sites/${item.fromSiteId}/transfers?id=${item.id}`}>
+            <Button variant="ghost" size="sm" className="h-7 px-2">
+              <Eye className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function TransferActionButton({ transfer, onAction }: {
   transfer: TransferWithItems;
@@ -163,10 +203,16 @@ export default function SiteTransfersPage({ params }: { params: Promise<{ siteId
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-        <div><h1 className="text-2xl font-bold">Transfers</h1><p className="text-muted-foreground">Equipment and material transfers</p></div>
-        <Link href={`/sites/${siteId}/transfers/new`}><Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Transfer</Button></Link>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-lg md:text-2xl font-bold">Transfers</h1>
+        <Link href={`/sites/${siteId}/transfers/new`}>
+          <Button size="sm" className="h-9">
+            <Plus className="mr-1.5 h-4 w-4" />
+            <span className="hidden sm:inline">New Transfer</span>
+            <span className="sm:hidden">New</span>
+          </Button>
+        </Link>
       </div>
       {isLoading ? <TableSkeleton /> : (
         <DataTable
@@ -187,6 +233,12 @@ export default function SiteTransfersPage({ params }: { params: Promise<{ siteId
               ],
             },
           ]}
+          renderMobileCard={(item) => (
+            <TransferMobileCard
+              item={item as TransferWithItems}
+              onAction={handleAction}
+            />
+          )}
         />
       )}
 

@@ -1,5 +1,24 @@
 import { z } from "zod";
 
+const stageTimingSchema = z.object({
+  start: z.string().optional(),
+  end: z.string().optional(),
+});
+
+const stageTimingsSchema = z.object({
+  setup: stageTimingSchema.optional(),
+  hacking: stageTimingSchema.optional(),
+  cleanup: stageTimingSchema.optional(),
+});
+
+const equipmentUsedSchema = z.object({
+  equipmentId: z.string().uuid().optional(),
+  name: z.string().min(1).max(200).trim(),
+  hours: z.number().min(0).max(24),
+  isDowntime: z.boolean().default(false),
+  downtimeReason: z.string().max(500).trim().optional(),
+});
+
 export const pileHeadHackingSchema = z.object({
   pileId: z
     .string()
@@ -15,8 +34,8 @@ export const pileHeadHackingSchema = z.object({
   wasteVolume: z
     .number()
     .min(0, "Waste volume must be non-negative")
-    .max(100, "Waste volume must not exceed 100 m\u00B3")
-    .describe("Waste volume in m\u00B3"),
+    .max(100, "Waste volume must not exceed 100 m³")
+    .describe("Waste volume in m³"),
   exposedRebarLength: z
     .number()
     .min(0, "Exposed rebar length must be non-negative")
@@ -37,6 +56,10 @@ export const pileHeadHackingSchema = z.object({
     )
     .max(10, "Maximum 10 completion photos allowed")
     .optional(),
+
+  // Enhanced fields
+  stageTimings: stageTimingsSchema.optional(),
+  equipmentUsed: z.array(equipmentUsedSchema).max(20).optional(),
 });
 
 export type PileHeadHackingDetails = z.infer<typeof pileHeadHackingSchema>;

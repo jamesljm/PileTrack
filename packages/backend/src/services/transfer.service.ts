@@ -219,9 +219,33 @@ class TransferService {
       for (const item of items) {
         // Move equipment to destination site
         if (item.equipmentId) {
+          // Close old site history record
+          const openHistory = await tx.equipmentSiteHistory.findFirst({
+            where: {
+              equipmentId: item.equipmentId,
+              removedAt: null,
+            },
+            orderBy: { assignedAt: "desc" },
+          });
+          if (openHistory) {
+            await tx.equipmentSiteHistory.update({
+              where: { id: openHistory.id },
+              data: { removedAt: new Date() },
+            });
+          }
+
           await tx.equipment.update({
             where: { id: item.equipmentId },
             data: { siteId: transfer.toSiteId },
+          });
+
+          // Create new site history record
+          await tx.equipmentSiteHistory.create({
+            data: {
+              equipmentId: item.equipmentId,
+              siteId: transfer.toSiteId,
+              transferId: id,
+            },
           });
         }
 

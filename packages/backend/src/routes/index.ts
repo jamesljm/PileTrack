@@ -9,6 +9,8 @@ import transfersRoutes from "./transfers.routes";
 import syncRoutes from "./sync.routes";
 import reportsRoutes from "./reports.routes";
 import notificationsRoutes from "./notifications.routes";
+import holdPointsRoutes from "./hold-points.routes";
+import productionRoutes from "./production.routes";
 
 const router = Router();
 
@@ -22,5 +24,7 @@ router.use("/transfers", transfersRoutes);
 router.use("/sync", syncRoutes);
 router.use("/reports", reportsRoutes);
 router.use("/notifications", notificationsRoutes);
+router.use("/", holdPointsRoutes);
+router.use("/", productionRoutes);
 
 export default router;

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EquipmentCategory, EquipmentStatus } from "../enums";
+import { EquipmentCategory, EquipmentStatus, EquipmentCondition } from "../enums";
 
 // ─── Create Equipment ────────────────────────────────────────────────────────
 
@@ -40,6 +40,12 @@ export const createEquipmentSchema = z.object({
     .optional(),
   lastServiceDate: z.coerce.date().optional(),
   nextServiceDate: z.coerce.date().optional(),
+  condition: z.nativeEnum(EquipmentCondition).optional(),
+  serviceIntervalHours: z.number().min(0).optional(),
+  purchaseDate: z.coerce.date().optional(),
+  purchasePrice: z.number().min(0).optional(),
+  dailyRate: z.number().min(0).optional(),
+  insuranceExpiry: z.coerce.date().optional(),
   notes: z
     .string()
     .max(2000, "Notes must not exceed 2000 characters")
@@ -67,6 +73,7 @@ export const updateEquipmentSchema = z.object({
     .optional(),
   category: z.nativeEnum(EquipmentCategory).optional(),
   status: z.nativeEnum(EquipmentStatus).optional(),
+  condition: z.nativeEnum(EquipmentCondition).optional(),
   siteId: z.string().uuid("Invalid site ID").nullish(),
   serialNumber: z
     .string()
@@ -91,6 +98,11 @@ export const updateEquipmentSchema = z.object({
     .nullish(),
   lastServiceDate: z.coerce.date().nullish(),
   nextServiceDate: z.coerce.date().nullish(),
+  serviceIntervalHours: z.number().min(0).nullish(),
+  purchaseDate: z.coerce.date().nullish(),
+  purchasePrice: z.number().min(0).nullish(),
+  dailyRate: z.number().min(0).nullish(),
+  insuranceExpiry: z.coerce.date().nullish(),
   notes: z
     .string()
     .max(2000, "Notes must not exceed 2000 characters")
@@ -106,6 +118,7 @@ export const equipmentFilterSchema = z.object({
   search: z.string().max(200).optional(),
   category: z.nativeEnum(EquipmentCategory).optional(),
   status: z.nativeEnum(EquipmentStatus).optional(),
+  condition: z.nativeEnum(EquipmentCondition).optional(),
   siteId: z.string().uuid().optional(),
 });
 

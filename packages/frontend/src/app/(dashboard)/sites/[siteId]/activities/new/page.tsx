@@ -22,8 +22,8 @@ export default function NewActivityPage({ params }: { params: Promise<{ siteId: 
   };
 
   return (
-    <div className="space-y-6">
-      <div><h1 className="text-2xl font-bold">New Activity</h1><p className="text-muted-foreground">Record a new piling activity</p></div>
+    <div className="space-y-4">
+      <h1 className="text-lg md:text-2xl font-bold">New Activity</h1>
       <ActivityFormWrapper siteId={siteId} onSubmit={handleSubmit} isLoading={createActivity.isPending} />
     </div>
   );

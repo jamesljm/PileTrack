@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { MapPin, Activity } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SITE_STATUS_COLORS } from "@/lib/constants";
 import type { SiteStatus } from "@piletrack/shared";
@@ -26,26 +26,24 @@ export function SiteCard({
 }: SiteCardProps) {
   return (
     <Link href={`/sites/${id}`}>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-base">{name}</CardTitle>
-              <p className="text-sm text-muted-foreground">{code}</p>
+      <Card className="hover:shadow-md active:bg-accent/50 transition-all cursor-pointer">
+        <CardContent className="p-3 md:p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 space-y-0.5">
+              <CardTitle className="text-sm md:text-base truncate">{name}</CardTitle>
+              <p className="text-xs text-muted-foreground">{code}</p>
             </div>
-            <Badge className={SITE_STATUS_COLORS[status]}>{status}</Badge>
+            <Badge className={`shrink-0 text-[10px] px-1.5 py-0 md:text-xs md:px-2.5 md:py-0.5 ${SITE_STATUS_COLORS[status]}`}>{status}</Badge>
           </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" />
-              <span>{clientName}</span>
+          <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+            <div className="flex items-center gap-1 truncate">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">{clientName}</span>
             </div>
             {activityCount !== undefined && (
-              <div className="flex items-center gap-1">
-                <Activity className="h-3.5 w-3.5" />
-                <span>{activityCount} activities</span>
+              <div className="flex items-center gap-1 shrink-0">
+                <Activity className="h-3 w-3" />
+                <span>{activityCount}</span>
               </div>
             )}
           </div>

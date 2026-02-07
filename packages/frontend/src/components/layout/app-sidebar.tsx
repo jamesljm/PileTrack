@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   HardHat,
+  Gauge,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const mainNavItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/sites", label: "Sites", icon: MapPin },
   { href: "/equipment", label: "Equipment", icon: Wrench },
+  { href: "/equipment/dashboard", label: "Fleet Dashboard", icon: Gauge },
   { href: "/approvals", label: "Approvals", icon: CheckSquare },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/notifications", label: "Notifications", icon: Bell },

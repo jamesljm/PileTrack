@@ -27,26 +27,36 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
   if (!site) return <div className="text-center py-12"><p className="text-muted-foreground">Site not found</p></div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-2 sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{site.name}</h1>
-          <p className="text-muted-foreground">{site.code} - {site.clientName}</p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-lg md:text-2xl font-bold truncate">{site.name}</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">{site.code} - {site.clientName}</p>
         </div>
-        <Badge className={SITE_STATUS_COLORS[site.status as SiteStatus]}>{site.status}</Badge>
+        <Badge className={`shrink-0 ${SITE_STATUS_COLORS[site.status as SiteStatus]}`}>{site.status}</Badge>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
-        <Link href={`/sites/${siteId}/activities/new`}><Button className="w-full"><Plus className="mr-2 h-4 w-4" />New Activity</Button></Link>
-        <Link href={`/sites/${siteId}/equipment/new`}><Button variant="outline" className="w-full"><Wrench className="mr-2 h-4 w-4" />Add Equipment</Button></Link>
-        <Link href={`/sites/${siteId}/materials/new`}><Button variant="outline" className="w-full"><Package className="mr-2 h-4 w-4" />Add Material</Button></Link>
-        <Link href={`/sites/${siteId}/transfers/new`}><Button variant="outline" className="w-full"><ArrowLeftRight className="mr-2 h-4 w-4" />New Transfer</Button></Link>
-        <Link href={`/sites/${siteId}/activities`}><Button variant="outline" className="w-full"><Activity className="mr-2 h-4 w-4" />All Activities</Button></Link>
+      {/* Quick Actions — 2-col on mobile, 5-col on desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <Link href={`/sites/${siteId}/activities/new`} className="col-span-2 md:col-span-1">
+          <Button className="w-full h-9" size="sm"><Plus className="mr-1.5 h-4 w-4" />New Activity</Button>
+        </Link>
+        <Link href={`/sites/${siteId}/equipment/new`}>
+          <Button variant="outline" className="w-full h-9" size="sm"><Wrench className="mr-1.5 h-4 w-4" />Equipment</Button>
+        </Link>
+        <Link href={`/sites/${siteId}/materials/new`}>
+          <Button variant="outline" className="w-full h-9" size="sm"><Package className="mr-1.5 h-4 w-4" />Material</Button>
+        </Link>
+        <Link href={`/sites/${siteId}/transfers/new`}>
+          <Button variant="outline" className="w-full h-9" size="sm"><ArrowLeftRight className="mr-1.5 h-4 w-4" />Transfer</Button>
+        </Link>
+        <Link href={`/sites/${siteId}/activities`}>
+          <Button variant="outline" className="w-full h-9" size="sm"><Activity className="mr-1.5 h-4 w-4" />All Activity</Button>
+        </Link>
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
           <TabsTrigger value="equipment">Equipment</TabsTrigger>

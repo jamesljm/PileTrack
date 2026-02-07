@@ -1,5 +1,34 @@
 import { z } from "zod";
 
+const concreteTruckSchema = z.object({
+  ticketNo: z.string().min(1).max(50).trim(),
+  volume: z.number().positive().max(20).describe("Volume in m³"),
+  slump: z.number().int().min(0).max(300).describe("Slump in mm"),
+  temperature: z.number().min(0).max(60).describe("Temperature in °C").optional(),
+  arrivalTime: z.string().optional(),
+  accepted: z.boolean().default(true),
+});
+
+const stageTimingSchema = z.object({
+  start: z.string().optional(),
+  end: z.string().optional(),
+});
+
+const stageTimingsSchema = z.object({
+  setup: stageTimingSchema.optional(),
+  excavation: stageTimingSchema.optional(),
+  cage: stageTimingSchema.optional(),
+  concreting: stageTimingSchema.optional(),
+});
+
+const equipmentUsedSchema = z.object({
+  equipmentId: z.string().uuid().optional(),
+  name: z.string().min(1).max(200).trim(),
+  hours: z.number().min(0).max(24),
+  isDowntime: z.boolean().default(false),
+  downtimeReason: z.string().max(500).trim().optional(),
+});
+
 export const caissonPileSchema = z.object({
   caissonId: z
     .string()
@@ -24,8 +53,8 @@ export const caissonPileSchema = z.object({
   concreteVolume: z
     .number()
     .positive("Concrete volume must be positive")
-    .max(5000, "Concrete volume must not exceed 5000 m\u00B3")
-    .describe("Concrete volume in m\u00B3"),
+    .max(5000, "Concrete volume must not exceed 5000 m³")
+    .describe("Concrete volume in m³"),
   reinforcementCage: z
     .string()
     .min(1, "Reinforcement cage details are required")
@@ -66,6 +95,13 @@ export const caissonPileSchema = z.object({
     .min(0, "Sonic logging tubes must be non-negative")
     .max(10, "Sonic logging tubes must not exceed 10")
     .default(0),
+
+  // Enhanced fields
+  theoreticalVolume: z.number().min(0).describe("Theoretical concrete volume in m³ — auto-calculated").optional(),
+  overconsumptionPct: z.number().describe("Overconsumption percentage — auto-calculated").optional(),
+  concreteTrucks: z.array(concreteTruckSchema).max(50).optional(),
+  stageTimings: stageTimingsSchema.optional(),
+  equipmentUsed: z.array(equipmentUsedSchema).max(20).optional(),
 });
 
 export type CaissonPileDetails = z.infer<typeof caissonPileSchema>;

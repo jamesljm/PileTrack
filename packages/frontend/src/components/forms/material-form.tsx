@@ -58,145 +58,84 @@ export function MaterialForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Material name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="code"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Code</FormLabel>
-                <FormControl>
-                  <Input placeholder="MAT-001" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField
-            control={form.control}
-            name="unit"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Unit</FormLabel>
-                <FormControl>
-                  <Input placeholder="kg, m3, pcs" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="currentStock"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Current Stock</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="minimumStock"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Minimum Stock</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <FormControl>
-                  <Input placeholder="Category" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="supplier"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Supplier</FormLabel>
-                <FormControl>
-                  <Input placeholder="Supplier name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="unitPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Unit Price</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    {...field}
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value ? Number(e.target.value) : undefined,
-                      )
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <FormField control={form.control} name="name" render={({ field }) => (
             <FormItem>
-              <FormLabel>Notes</FormLabel>
+              <FormLabel>Name</FormLabel>
+              <FormControl><Input placeholder="Material name" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="code" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Code</FormLabel>
+              <FormControl><Input placeholder="MAT-001" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 md:gap-3">
+          <FormField control={form.control} name="unit" render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs md:text-sm">Unit</FormLabel>
+              <FormControl><Input placeholder="kg" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="currentStock" render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs md:text-sm">Current</FormLabel>
+              <FormControl><Input type="number" step="0.01" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="minimumStock" render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs md:text-sm">Minimum</FormLabel>
+              <FormControl><Input type="number" step="0.01" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <FormField control={form.control} name="category" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <FormControl><Input placeholder="Category" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="supplier" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Supplier</FormLabel>
+              <FormControl><Input placeholder="Supplier name" className="min-h-[44px]" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="unitPrice" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Unit Price</FormLabel>
               <FormControl>
-                <Textarea placeholder="Additional notes..." {...field} />
+                <Input type="number" step="0.01" placeholder="0.00" className="min-h-[44px]" {...field}
+                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)} />
               </FormControl>
               <FormMessage />
             </FormItem>
-          )}
-        />
+          )} />
+        </div>
 
-        <Button type="submit" disabled={isLoading}>
+        <FormField control={form.control} name="notes" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Notes</FormLabel>
+            <FormControl><Textarea placeholder="Additional notes..." className="min-h-[80px]" {...field} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+
+        <Button type="submit" disabled={isLoading} className="w-full md:w-auto min-h-[44px]">
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {defaultValues ? "Update Material" : "Create Material"}
         </Button>

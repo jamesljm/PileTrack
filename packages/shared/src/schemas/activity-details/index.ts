@@ -22,7 +22,7 @@ export {
   caissonPileSchema,
 };
 
-export type { BoredPilingDetails } from "./bored-piling.schema";
+export type { BoredPilingDetails, ConcreteTruck, StageTimings, EquipmentUsedEntry } from "./bored-piling.schema";
 export type { MicropilingDetails } from "./micropiling.schema";
 export type { DiaphragmWallDetails } from "./diaphragm-wall.schema";
 export type { SheetPilingDetails } from "./sheet-piling.schema";

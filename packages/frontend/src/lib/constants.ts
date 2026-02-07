@@ -3,8 +3,12 @@ import {
   ActivityStatus,
   EquipmentCategory,
   EquipmentStatus,
+  EquipmentCondition,
+  ServiceType,
   TransferStatus,
   SiteStatus,
+  HoldPointType,
+  HoldPointStatus,
 } from "@piletrack/shared";
 
 export const API_URL =
@@ -67,6 +71,52 @@ export const SITE_STATUS_COLORS: Record<SiteStatus, string> = {
   [SiteStatus.ACTIVE]: "bg-green-100 text-green-800",
   [SiteStatus.INACTIVE]: "bg-gray-100 text-gray-800",
   [SiteStatus.COMPLETED]: "bg-blue-100 text-blue-800",
+};
+
+export const HOLD_POINT_TYPE_LABELS: Record<HoldPointType, string> = {
+  [HoldPointType.PRE_BORING]: "Pre-Boring",
+  [HoldPointType.PRE_CAGE]: "Pre-Cage",
+  [HoldPointType.PRE_CONCRETE]: "Pre-Concrete",
+};
+
+export const HOLD_POINT_STATUS_COLORS: Record<HoldPointStatus, string> = {
+  [HoldPointStatus.PENDING]: "bg-yellow-100 text-yellow-800",
+  [HoldPointStatus.APPROVED]: "bg-green-100 text-green-800",
+  [HoldPointStatus.REJECTED]: "bg-red-100 text-red-800",
+};
+
+export const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
+  [ServiceType.ROUTINE_MAINTENANCE]: "Routine Maintenance",
+  [ServiceType.REPAIR]: "Repair",
+  [ServiceType.INSPECTION]: "Inspection",
+  [ServiceType.OVERHAUL]: "Overhaul",
+  [ServiceType.CALIBRATION]: "Calibration",
+  [ServiceType.BREAKDOWN_REPAIR]: "Breakdown Repair",
+};
+
+export const SERVICE_TYPE_COLORS: Record<ServiceType, string> = {
+  [ServiceType.ROUTINE_MAINTENANCE]: "bg-blue-100 text-blue-800",
+  [ServiceType.REPAIR]: "bg-orange-100 text-orange-800",
+  [ServiceType.INSPECTION]: "bg-purple-100 text-purple-800",
+  [ServiceType.OVERHAUL]: "bg-red-100 text-red-800",
+  [ServiceType.CALIBRATION]: "bg-cyan-100 text-cyan-800",
+  [ServiceType.BREAKDOWN_REPAIR]: "bg-red-100 text-red-800",
+};
+
+export const EQUIPMENT_CONDITION_LABELS: Record<EquipmentCondition, string> = {
+  [EquipmentCondition.EXCELLENT]: "Excellent",
+  [EquipmentCondition.GOOD]: "Good",
+  [EquipmentCondition.FAIR]: "Fair",
+  [EquipmentCondition.POOR]: "Poor",
+  [EquipmentCondition.CRITICAL]: "Critical",
+};
+
+export const EQUIPMENT_CONDITION_COLORS: Record<EquipmentCondition, string> = {
+  [EquipmentCondition.EXCELLENT]: "bg-green-100 text-green-800",
+  [EquipmentCondition.GOOD]: "bg-blue-100 text-blue-800",
+  [EquipmentCondition.FAIR]: "bg-yellow-100 text-yellow-800",
+  [EquipmentCondition.POOR]: "bg-orange-100 text-orange-800",
+  [EquipmentCondition.CRITICAL]: "bg-red-100 text-red-800",
 };
 
 export const WEATHER_CONDITIONS = [

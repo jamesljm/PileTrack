@@ -1,7 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
 import { equipmentService } from "../services/equipment.service";
+import { equipmentUsageService } from "../services/equipment-usage.service";
+import { serviceRecordService } from "../services/service-record.service";
 import { parsePagination, buildPaginatedResponse } from "../utils/pagination";
 import type { ApiResponse, PaginatedResponse } from "../types";
+import { prisma } from "../config/database";
 
 export class EquipmentController {
   async getEquipment(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -177,6 +180,119 @@ export class EquipmentController {
       const response: ApiResponse = {
         success: true,
         data: history,
+        requestId: req.requestId,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getUsage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const dateRange = {
+        from: req.query.from ? new Date(req.query.from as string) : undefined,
+        to: req.query.to ? new Date(req.query.to as string) : undefined,
+      };
+
+      const usage = await equipmentUsageService.getUsageHistory(req.params.id!, dateRange);
+
+      const response: ApiResponse = {
+        success: true,
+        data: usage,
+        requestId: req.requestId,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getUsageSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const summary = await equipmentUsageService.getUsageSummary(req.params.id!);
+
+      const response: ApiResponse = {
+        success: true,
+        data: summary,
+        requestId: req.requestId,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getStats(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const equipmentId = req.params.id!;
+
+      const [usageSummary, costSummary, serviceDue] = await Promise.all([
+        equipmentUsageService.getUsageSummary(equipmentId),
+        serviceRecordService.getCostSummary(equipmentId),
+        equipmentUsageService.checkServiceDueByHours(equipmentId),
+      ]);
+
+      const equipment = await equipmentService.getEquipmentById(equipmentId);
+      const eq = equipment as any;
+      const daysSinceLastService = eq.lastServiceDate
+        ? Math.floor((Date.now() - new Date(eq.lastServiceDate).getTime()) / (1000 * 60 * 60 * 24))
+        : null;
+
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          totalUsageHours: usageSummary.totalHours,
+          productiveHours: usageSummary.productiveHours,
+          downtimeHours: usageSummary.downtimeHours,
+          utilizationRate: usageSummary.utilizationRate,
+          totalServiceCost: costSummary.totalCost,
+          serviceCount: costSummary.recordCount,
+          daysSinceLastService,
+          isServiceOverdue: serviceDue.isDue,
+        },
+        requestId: req.requestId,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getSiteHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const siteHistory = await prisma.equipmentSiteHistory.findMany({
+        where: { equipmentId: req.params.id! },
+        orderBy: { assignedAt: "desc" },
+        include: {
+          site: { select: { id: true, name: true, code: true } },
+          transfer: { select: { id: true } },
+        },
+      });
+
+      const response: ApiResponse = {
+        success: true,
+        data: siteHistory,
+        requestId: req.requestId,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getFleetStats(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const stats = await equipmentService.getFleetStats();
+
+      const response: ApiResponse = {
+        success: true,
+        data: stats,
         requestId: req.requestId,
       };
 

@@ -17,7 +17,16 @@ export type { Site, SiteSummary, SiteWithUsers } from "./site.types";
 
 export type { ActivityRecord, ActivitySummary } from "./activity.types";
 
-export type { Equipment } from "./equipment.types";
+export type {
+  Equipment,
+  ServiceRecord,
+  EquipmentSiteHistory,
+  EquipmentUsageEntry,
+  EquipmentUsageSummary,
+  EquipmentStats,
+  ServiceCostSummary,
+  FleetStats,
+} from "./equipment.types";
 
 export type { Material } from "./material.types";
 

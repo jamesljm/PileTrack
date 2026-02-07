@@ -52,6 +52,26 @@ class ReportService {
       summary[type] = (summary[type] ?? 0) + 1;
     }
 
+    // Production KPIs from activity details
+    let pilesCompleted = 0;
+    let metresDrilled = 0;
+    let concreteUsed = 0;
+    let overconsumptionSum = 0;
+    let overconsumptionCount = 0;
+
+    for (const activity of activities) {
+      if (activity.status !== "APPROVED") continue;
+      const details = (activity.details ?? {}) as Record<string, unknown>;
+      const pileId = (details.pileId ?? details.panelId ?? details.caissonId ?? details.pileNumber ?? details.pilecapId) as string | undefined;
+      if (pileId) pilesCompleted++;
+      const depth = details.depth as number | undefined;
+      if (depth && depth > 0) metresDrilled += depth;
+      const vol = details.concreteVolume as number | undefined;
+      if (vol && vol > 0) concreteUsed += vol;
+      const oc = details.overconsumptionPct as number | undefined;
+      if (oc !== undefined && oc !== null) { overconsumptionSum += oc; overconsumptionCount++; }
+    }
+
     return {
       site: { id: site.id, name: site.name, code: site.code },
       date: date.toISOString().split("T")[0],
@@ -59,6 +79,10 @@ class ReportService {
       totalActivities: activities.length,
       approvedActivities: activities.filter((a) => a.status === "APPROVED").length,
       pendingActivities: activities.filter((a) => a.status === "SUBMITTED").length,
+      pilesCompleted,
+      metresDrilled: Math.round(metresDrilled * 100) / 100,
+      concreteUsed: Math.round(concreteUsed * 100) / 100,
+      avgOverconsumption: overconsumptionCount > 0 ? Math.round((overconsumptionSum / overconsumptionCount) * 10) / 10 : 0,
       activities,
       equipmentInUse: equipmentUsed.length,
       equipment: equipmentUsed,

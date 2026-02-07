@@ -1,5 +1,24 @@
 import { z } from "zod";
 
+const stageTimingSchema = z.object({
+  start: z.string().optional(),
+  end: z.string().optional(),
+});
+
+const stageTimingsSchema = z.object({
+  setup: stageTimingSchema.optional(),
+  driving: stageTimingSchema.optional(),
+  welding: stageTimingSchema.optional(),
+});
+
+const equipmentUsedSchema = z.object({
+  equipmentId: z.string().uuid().optional(),
+  name: z.string().min(1).max(200).trim(),
+  hours: z.number().min(0).max(24),
+  isDowntime: z.boolean().default(false),
+  downtimeReason: z.string().max(500).trim().optional(),
+});
+
 export const sheetPilingSchema = z.object({
   pileNumber: z
     .string()
@@ -47,7 +66,7 @@ export const sheetPilingSchema = z.object({
   sectionModulus: z
     .number()
     .positive("Section modulus must be positive")
-    .describe("Section modulus in cm\u00B3/m")
+    .describe("Section modulus in cm³/m")
     .optional(),
   coatingType: z
     .string()
@@ -58,6 +77,10 @@ export const sheetPilingSchema = z.object({
   toeLevel: z
     .number()
     .describe("Toe level in mPD"),
+
+  // Enhanced fields
+  stageTimings: stageTimingsSchema.optional(),
+  equipmentUsed: z.array(equipmentUsedSchema).max(20).optional(),
 });
 
 export type SheetPilingDetails = z.infer<typeof sheetPilingSchema>;
