@@ -1,10 +1,14 @@
 "use client";
 
 import { use, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   useEquipmentItem,
   useEquipmentServiceRecords,
   useCreateServiceRecord,
+  useUpdateServiceRecord,
+  useDeleteServiceRecord,
+  useDeleteEquipment,
   useEquipmentUsage,
   useEquipmentUsageSummary,
   useEquipmentStats,
@@ -25,6 +29,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -49,6 +55,7 @@ import type {
   EquipmentStatus,
   EquipmentCondition,
   ServiceType,
+  ServiceRecord,
   ActivityType,
 } from "@piletrack/shared";
 import Link from "next/link";
@@ -62,6 +69,9 @@ import {
   TrendingUp,
   AlertTriangle,
   ArrowRightLeft,
+  Trash2,
+  QrCode,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -71,6 +81,7 @@ export default function EquipmentDetailPage({
   params: Promise<{ siteId: string; equipmentId: string }>;
 }) {
   const { siteId, equipmentId } = use(params);
+  const router = useRouter();
   const { data, isLoading } = useEquipmentItem(equipmentId);
   const eq = data?.data;
   const site = (eq as any)?.site as
@@ -79,6 +90,11 @@ export default function EquipmentDetailPage({
     | undefined;
 
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteRecordDialogOpen, setDeleteRecordDialogOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<ServiceRecord | null>(null);
+  const [deletingRecord, setDeletingRecord] = useState<ServiceRecord | null>(null);
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all");
   const { toast } = useToast();
 
@@ -89,6 +105,9 @@ export default function EquipmentDetailPage({
   const serviceRecords = serviceData?.data ?? [];
 
   const createServiceRecord = useCreateServiceRecord(equipmentId);
+  const updateServiceRecord = useUpdateServiceRecord(equipmentId);
+  const deleteServiceRecord = useDeleteServiceRecord(equipmentId);
+  const deleteEquipment = useDeleteEquipment();
 
   // Usage
   const { data: usageData } = useEquipmentUsage(equipmentId);
@@ -130,6 +149,66 @@ export default function EquipmentDetailPage({
     }
   };
 
+  const handleEditServiceRecord = async (formData: any) => {
+    if (!editingRecord) return;
+    try {
+      await updateServiceRecord.mutateAsync({
+        recordId: editingRecord.id,
+        data: formData,
+      });
+      setEditDialogOpen(false);
+      setEditingRecord(null);
+      toast({
+        title: "Service record updated",
+        description: "The service record has been updated.",
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to update service record.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteServiceRecord = async () => {
+    if (!deletingRecord) return;
+    try {
+      await deleteServiceRecord.mutateAsync(deletingRecord.id);
+      setDeleteRecordDialogOpen(false);
+      setDeletingRecord(null);
+      toast({
+        title: "Service record deleted",
+        description: "The service record has been removed.",
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to delete service record.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteEquipment = async () => {
+    try {
+      await deleteEquipment.mutateAsync(equipmentId);
+      toast({
+        title: "Equipment deleted",
+        description: "The equipment has been removed.",
+      });
+      router.push(`/sites/${siteId}/equipment`);
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to delete equipment.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const qrCode = (eq as any).qrCode as string | undefined;
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -142,7 +221,7 @@ export default function EquipmentDetailPage({
             <span>{EQUIPMENT_CATEGORY_LABELS[eq.category as EquipmentCategory]}</span>
           </div>
         </div>
-        <div className="flex gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <Badge className={`text-[10px] md:text-xs px-1.5 py-0 ${EQUIPMENT_STATUS_COLORS[eq.status as EquipmentStatus]}`}>
             {eq.status}
           </Badge>
@@ -152,7 +231,90 @@ export default function EquipmentDetailPage({
         </div>
       </div>
 
-      {/* Quick Stats Row — compact on mobile */}
+      {/* Delete Equipment Button */}
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-destructive border-destructive/50 hover:bg-destructive/10"
+          onClick={() => setDeleteDialogOpen(true)}
+        >
+          <Trash2 className="mr-1.5 h-4 w-4" />
+          Delete Equipment
+        </Button>
+      </div>
+
+      {/* Delete Equipment Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Equipment</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{eq.name}&quot;? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteEquipment} disabled={deleteEquipment.isPending}>
+              {deleteEquipment.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Service Record Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) setEditingRecord(null); }}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Service Record</DialogTitle>
+          </DialogHeader>
+          {editingRecord && (
+            <ServiceRecordForm
+              totalUsageHours={(eq as any).totalUsageHours ?? 0}
+              defaultValues={{
+                serviceType: editingRecord.serviceType as any,
+                serviceDate: editingRecord.serviceDate
+                  ? new Date(editingRecord.serviceDate).toISOString().split("T")[0]
+                  : undefined,
+                description: editingRecord.description,
+                performedBy: editingRecord.performedBy,
+                cost: editingRecord.cost ?? undefined,
+                partsReplaced: editingRecord.partsReplaced ?? undefined,
+                nextServiceDate: editingRecord.nextServiceDate
+                  ? new Date(editingRecord.nextServiceDate).toISOString().split("T")[0]
+                  : undefined,
+                meterReading: editingRecord.meterReading ?? undefined,
+                notes: editingRecord.notes ?? undefined,
+              }}
+              onSubmit={handleEditServiceRecord}
+              isLoading={updateServiceRecord.isPending}
+              submitLabel="Update Service Record"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Service Record Dialog */}
+      <Dialog open={deleteRecordDialogOpen} onOpenChange={(open) => { setDeleteRecordDialogOpen(open); if (!open) setDeletingRecord(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Service Record</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this service record? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteRecordDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteServiceRecord} disabled={deleteServiceRecord.isPending}>
+              {deleteServiceRecord.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Stats Row */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
           <Card>
@@ -209,7 +371,7 @@ export default function EquipmentDetailPage({
         </div>
       )}
 
-      {/* Tabs — scrollable on mobile */}
+      {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-3">
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -218,7 +380,7 @@ export default function EquipmentDetailPage({
           <TabsTrigger value="sites">Sites</TabsTrigger>
         </TabsList>
 
-        {/* ─── Tab 1: Overview ─── */}
+        {/* Tab 1: Overview */}
         <TabsContent value="overview" className="space-y-3">
           {site && (
             <Link href={`/sites/${site.id}`}>
@@ -231,6 +393,23 @@ export default function EquipmentDetailPage({
               </div>
             </Link>
           )}
+
+          {/* QR Code Card */}
+          <Card>
+            <CardContent className="p-3 md:p-6">
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <QrCode className="h-4 w-4" />
+                QR Code
+              </h3>
+              {qrCode ? (
+                <div className="flex items-center gap-3">
+                  <code className="text-xs bg-muted px-2 py-1 rounded break-all">{qrCode}</code>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No QR code assigned to this equipment.</p>
+              )}
+            </CardContent>
+          </Card>
 
           <Card>
             <CardContent className="p-3 md:p-6">
@@ -365,7 +544,7 @@ export default function EquipmentDetailPage({
           )}
         </TabsContent>
 
-        {/* ─── Tab 2: Service History ─── */}
+        {/* Tab 2: Service History */}
         <TabsContent value="service" className="space-y-3">
           <div className="flex items-center justify-between gap-2">
             <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
@@ -401,10 +580,20 @@ export default function EquipmentDetailPage({
             </Dialog>
           </div>
 
-          <ServiceTimeline records={serviceRecords} />
+          <ServiceTimeline
+            records={serviceRecords}
+            onEdit={(record) => {
+              setEditingRecord(record);
+              setEditDialogOpen(true);
+            }}
+            onDelete={(record) => {
+              setDeletingRecord(record);
+              setDeleteRecordDialogOpen(true);
+            }}
+          />
         </TabsContent>
 
-        {/* ─── Tab 3: Usage ─── */}
+        {/* Tab 3: Usage */}
         <TabsContent value="usage" className="space-y-3">
           {usageSummary && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
@@ -501,7 +690,7 @@ export default function EquipmentDetailPage({
           )}
         </TabsContent>
 
-        {/* ─── Tab 4: Site History ─── */}
+        {/* Tab 4: Site History */}
         <TabsContent value="sites" className="space-y-3">
           {siteHistory.length === 0 ? (
             <p className="text-center py-8 text-sm text-muted-foreground">No site assignment history.</p>

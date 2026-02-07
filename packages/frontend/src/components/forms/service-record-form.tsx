@@ -44,6 +44,7 @@ interface ServiceRecordFormProps {
   totalUsageHours?: number;
   onSubmit: (data: ServiceRecordFormValues) => Promise<void>;
   isLoading?: boolean;
+  submitLabel?: string;
 }
 
 export function ServiceRecordForm({
@@ -51,6 +52,7 @@ export function ServiceRecordForm({
   totalUsageHours,
   onSubmit,
   isLoading,
+  submitLabel = "Log Service Record",
 }: ServiceRecordFormProps) {
   const form = useForm<ServiceRecordFormValues>({
     resolver: zodResolver(serviceRecordFormSchema),
@@ -229,7 +231,7 @@ export function ServiceRecordForm({
 
         <Button type="submit" disabled={isLoading} className="w-full">
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Log Service Record
+          {submitLabel}
         </Button>
       </form>
     </Form>

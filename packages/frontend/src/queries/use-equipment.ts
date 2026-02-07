@@ -149,6 +149,17 @@ export function useUpdateEquipment(id: string) {
   });
 }
 
+export function useDeleteEquipment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api.delete<void>(`/equipment/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: equipmentKeys.all });
+    },
+  });
+}
+
 export function useScanQR() {
   return useMutation({
     mutationFn: (qrCode: string) =>
@@ -194,6 +205,63 @@ export function useCreateServiceRecord(equipmentId: string) {
       api.post<ApiResponse<ServiceRecord>>(
         `/equipment/${equipmentId}/service-records`,
         data,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: equipmentKeys.serviceRecords(equipmentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: equipmentKeys.detail(equipmentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: equipmentKeys.stats(equipmentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: equipmentKeys.serviceSummary(equipmentId),
+      });
+    },
+  });
+}
+
+export function useUpdateServiceRecord(equipmentId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      recordId,
+      data,
+    }: {
+      recordId: string;
+      data: Partial<CreateServiceRecordInput>;
+    }) =>
+      api.patch<ApiResponse<ServiceRecord>>(
+        `/equipment/${equipmentId}/service-records/${recordId}`,
+        data,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: equipmentKeys.serviceRecords(equipmentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: equipmentKeys.detail(equipmentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: equipmentKeys.stats(equipmentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: equipmentKeys.serviceSummary(equipmentId),
+      });
+    },
+  });
+}
+
+export function useDeleteServiceRecord(equipmentId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (recordId: string) =>
+      api.delete<void>(
+        `/equipment/${equipmentId}/service-records/${recordId}`,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({

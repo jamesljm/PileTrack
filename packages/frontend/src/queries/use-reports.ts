@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
+import { API_URL } from "@/lib/constants";
+import { getAccessToken } from "@/lib/auth";
 import type { ApiResponse } from "@piletrack/shared";
 
 interface DailyReportData {
@@ -95,4 +97,37 @@ export function useEquipmentUtilization(siteId?: string) {
       );
     },
   });
+}
+
+// ─── Export Functions ────────────────────────────────────────────────────────
+
+async function downloadBlob(url: string, filename: string) {
+  const token = getAccessToken();
+  const response = await fetch(`${API_URL}${url}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) throw new Error("Export failed");
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+
+export function exportCSV(siteId: string) {
+  return downloadBlob(
+    `/reports/export/csv/${siteId}`,
+    `site-report-${siteId}.csv`,
+  );
+}
+
+export function exportPDF(siteId: string) {
+  return downloadBlob(
+    `/reports/export/pdf/${siteId}`,
+    `site-report-${siteId}.pdf`,
+  );
 }

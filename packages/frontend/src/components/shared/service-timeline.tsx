@@ -1,15 +1,18 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { SERVICE_TYPE_LABELS, SERVICE_TYPE_COLORS } from "@/lib/constants";
 import type { ServiceRecord, ServiceType } from "@piletrack/shared";
-import { Wrench, Calendar, DollarSign, User } from "lucide-react";
+import { Wrench, Calendar, DollarSign, User, Pencil, Trash2 } from "lucide-react";
 
 interface ServiceTimelineProps {
   records: ServiceRecord[];
+  onEdit?: (record: ServiceRecord) => void;
+  onDelete?: (record: ServiceRecord) => void;
 }
 
-export function ServiceTimeline({ records }: ServiceTimelineProps) {
+export function ServiceTimeline({ records, onEdit, onDelete }: ServiceTimelineProps) {
   if (records.length === 0) {
     return (
       <p className="text-center py-8 text-muted-foreground">
@@ -36,12 +39,24 @@ export function ServiceTimeline({ records }: ServiceTimelineProps) {
                 </Badge>
                 <p className="text-sm font-medium">{record.description}</p>
               </div>
-              {record.cost != null && record.cost > 0 && (
-                <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground shrink-0">
-                  <DollarSign className="h-3 w-3" />
-                  {record.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              )}
+              <div className="flex items-center gap-1 shrink-0">
+                {record.cost != null && record.cost > 0 && (
+                  <span className="flex items-center gap-1 text-sm font-medium text-muted-foreground mr-2">
+                    <DollarSign className="h-3 w-3" />
+                    {record.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                )}
+                {onEdit && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(record)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(record)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">

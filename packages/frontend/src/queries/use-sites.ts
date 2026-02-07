@@ -19,6 +19,8 @@ const siteKeys = {
     [...siteKeys.lists(), filters] as const,
   details: () => [...siteKeys.all, "detail"] as const,
   detail: (id: string) => [...siteKeys.details(), id] as const,
+  users: (id: string) => [...siteKeys.all, "users", id] as const,
+  dashboard: (id: string) => [...siteKeys.all, "dashboard", id] as const,
 };
 
 export function useSites(
@@ -79,5 +81,51 @@ export function useDeleteSite() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: siteKeys.lists() });
     },
+  });
+}
+
+// ─── Site Users ──────────────────────────────────────────────────────────────
+
+export function useSiteUsers(siteId: string) {
+  return useQuery({
+    queryKey: siteKeys.users(siteId),
+    queryFn: () =>
+      api.get<ApiResponse<Array<Record<string, unknown>>>>(`/sites/${siteId}/users`),
+    enabled: !!siteId,
+  });
+}
+
+export function useAssignSiteUser(siteId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { userId: string; siteRole?: string }) =>
+      api.post<ApiResponse<unknown>>(`/sites/${siteId}/users`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siteKeys.users(siteId) });
+    },
+  });
+}
+
+export function useRemoveSiteUser(siteId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) =>
+      api.delete<void>(`/sites/${siteId}/users/${userId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siteKeys.users(siteId) });
+    },
+  });
+}
+
+// ─── Site Dashboard ─────────────────────────────────────────────────────────
+
+export function useSiteDashboard(siteId: string) {
+  return useQuery({
+    queryKey: siteKeys.dashboard(siteId),
+    queryFn: () =>
+      api.get<ApiResponse<Record<string, unknown>>>(`/sites/${siteId}/dashboard`),
+    enabled: !!siteId,
   });
 }

@@ -1,23 +1,99 @@
 "use client";
 
-import { use } from "react";
-import { useActivity } from "@/queries/use-activities";
+import { use, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  useActivity,
+  useSubmitActivity,
+  useDeleteActivity,
+  useApproveActivity,
+  useRejectActivity,
+} from "@/queries/use-activities";
 import { useHoldPoints } from "@/queries/use-hold-points";
+import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { ACTIVITY_TYPE_LABELS, ACTIVITY_STATUS_COLORS } from "@/lib/constants";
 import { FormSkeleton } from "@/components/shared/loading-skeleton";
 import { OverconsumptionBadge } from "@/components/shared/overconsumption-badge";
 import { HoldPointCard } from "@/components/shared/hold-point-card";
+import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
+import { Send, Trash2, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import type { ActivityType, ActivityStatus } from "@piletrack/shared";
 
 export default function ActivityDetailPage({ params }: { params: Promise<{ siteId: string; activityId: string }> }) {
   const { siteId, activityId } = use(params);
+  const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
   const { data, isLoading } = useActivity(activityId);
   const { data: holdPointsData } = useHoldPoints(activityId);
   const activity = data?.data as Record<string, any> | undefined;
   const holdPoints = (holdPointsData?.data ?? []) as Array<Record<string, any>>;
+
+  const submitActivity = useSubmitActivity();
+  const deleteActivity = useDeleteActivity();
+  const approveActivity = useApproveActivity();
+  const rejectActivity = useRejectActivity();
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const userRole = user?.role;
+  const canApprove = userRole === "ADMIN" || userRole === "SUPERVISOR";
+  const canDelete = userRole === "ADMIN" || (activity?.status === "DRAFT" && activity?.createdById === user?.id);
+
+  const handleSubmit = async () => {
+    try {
+      await submitActivity.mutateAsync(activityId);
+      toast({ title: "Activity submitted", description: "The activity has been submitted for approval." });
+    } catch {
+      toast({ title: "Error", description: "Failed to submit activity.", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteActivity.mutateAsync(activityId);
+      toast({ title: "Activity deleted", description: "The activity has been removed." });
+      router.push(`/sites/${siteId}/activities`);
+    } catch {
+      toast({ title: "Error", description: "Failed to delete activity.", variant: "destructive" });
+    }
+  };
+
+  const handleApprove = async () => {
+    try {
+      await approveActivity.mutateAsync({ id: activityId, data: {} as any });
+      toast({ title: "Activity approved", description: "The activity has been approved." });
+    } catch {
+      toast({ title: "Error", description: "Failed to approve activity.", variant: "destructive" });
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      await rejectActivity.mutateAsync({ id: activityId, data: { reason: rejectReason } as any });
+      toast({ title: "Activity rejected", description: "The activity has been rejected." });
+      setRejectDialogOpen(false);
+      setRejectReason("");
+    } catch {
+      toast({ title: "Error", description: "Failed to reject activity.", variant: "destructive" });
+    }
+  };
 
   if (isLoading) return <FormSkeleton />;
   if (!activity) return <p className="text-center py-12 text-muted-foreground">Activity not found</p>;
@@ -40,25 +116,94 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ siteI
   ]);
 
   function calcDuration(start?: string, end?: string): string {
-    if (!start || !end) return "—";
+    if (!start || !end) return "\u2014";
     const [sh, sm] = start.split(":").map(Number);
     const [eh, em] = end.split(":").map(Number);
     const mins = (eh! * 60 + em!) - (sh! * 60 + sm!);
-    if (mins < 0) return "—";
+    if (mins < 0) return "\u2014";
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     return `${h}h ${m}m`;
   }
+
+  const status = activity.status as string;
 
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h1 className="text-lg md:text-2xl font-bold truncate">{ACTIVITY_TYPE_LABELS[activity.activityType as ActivityType]}</h1>
-          <p className="text-xs md:text-sm text-muted-foreground">{activity.activityDate ? format(new Date(activity.activityDate), "dd MMM yyyy") : "—"}</p>
+          <p className="text-xs md:text-sm text-muted-foreground">{activity.activityDate ? format(new Date(activity.activityDate), "dd MMM yyyy") : "\u2014"}</p>
         </div>
         <Badge className={`shrink-0 ${ACTIVITY_STATUS_COLORS[activity.status as ActivityStatus]}`}>{activity.status}</Badge>
       </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-wrap gap-2">
+        {status === "DRAFT" && (
+          <Button size="sm" onClick={handleSubmit} disabled={submitActivity.isPending}>
+            {submitActivity.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Send className="mr-1.5 h-4 w-4" />}
+            Submit
+          </Button>
+        )}
+        {status === "SUBMITTED" && canApprove && (
+          <>
+            <Button size="sm" onClick={handleApprove} disabled={approveActivity.isPending}>
+              {approveActivity.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-1.5 h-4 w-4" />}
+              Approve
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => setRejectDialogOpen(true)} disabled={rejectActivity.isPending}>
+              <XCircle className="mr-1.5 h-4 w-4" />
+              Reject
+            </Button>
+          </>
+        )}
+        {canDelete && (
+          <Button size="sm" variant="outline" className="text-destructive border-destructive/50 hover:bg-destructive/10" onClick={() => setDeleteDialogOpen(true)}>
+            <Trash2 className="mr-1.5 h-4 w-4" />
+            Delete
+          </Button>
+        )}
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Activity</DialogTitle>
+            <DialogDescription>Are you sure you want to delete this activity? This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteActivity.isPending}>
+              {deleteActivity.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Activity</DialogTitle>
+            <DialogDescription>Provide a reason for rejecting this activity.</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="Reason for rejection..."
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleReject} disabled={rejectActivity.isPending || !rejectReason.trim()}>
+              {rejectActivity.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Overconsumption Badge */}
       {theoreticalVolume && actualVolume && overconsumptionPct !== undefined && (
@@ -183,8 +328,8 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ siteI
                       <td className="py-2 px-2">{truck.ticketNo}</td>
                       <td className="py-2 px-2 text-right">{truck.volume}</td>
                       <td className="py-2 px-2 text-right">{truck.slump}</td>
-                      <td className="py-2 px-2 text-right">{truck.temperature ?? "—"}</td>
-                      <td className="py-2 px-2">{truck.arrivalTime || "—"}</td>
+                      <td className="py-2 px-2 text-right">{truck.temperature ?? "\u2014"}</td>
+                      <td className="py-2 px-2">{truck.arrivalTime || "\u2014"}</td>
                       <td className="py-2 px-2 text-center">{truck.accepted !== false ? "Yes" : "No"}</td>
                     </tr>
                   ))}
@@ -214,7 +359,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ siteI
                 <div key={stage} className="flex justify-between items-center">
                   <span className="capitalize font-medium">{stage === "cage" ? "Cage Installation" : stage}</span>
                   <span>
-                    {timing.start || "—"} → {timing.end || "—"}
+                    {timing.start || "\u2014"} → {timing.end || "\u2014"}
                     <span className="ml-2 text-muted-foreground">({calcDuration(timing.start, timing.end)})</span>
                   </span>
                 </div>

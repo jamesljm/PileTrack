@@ -105,6 +105,17 @@ export function useUpdateMaterial(id: string) {
   });
 }
 
+export function useDeleteMaterial() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api.delete<void>(`/materials/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: materialKeys.all });
+    },
+  });
+}
+
 export function useAdjustStock(id: string) {
   const queryClient = useQueryClient();
 

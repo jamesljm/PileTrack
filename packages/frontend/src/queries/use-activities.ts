@@ -128,6 +128,29 @@ export function useRejectActivity() {
   });
 }
 
+export function useSubmitActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<ApiResponse<ActivityRecord>>(`/activities/${id}/submit`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: activityKeys.all });
+    },
+  });
+}
+
+export function useDeleteActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api.delete<void>(`/activities/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: activityKeys.all });
+    },
+  });
+}
+
 export function usePendingActivities(page = 1, pageSize = 20) {
   return useQuery({
     queryKey: [...activityKeys.pending(), { page, pageSize }],
