@@ -14,9 +14,9 @@ export default function EquipmentPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
         <div><h1 className="text-2xl font-bold">Equipment</h1><p className="text-muted-foreground">All equipment across sites</p></div>
-        <Link href="/equipment/scan"><Button variant="outline"><QrCode className="mr-2 h-4 w-4" />Scan QR</Button></Link>
+        <Link href="/equipment/scan"><Button variant="outline" className="w-full sm:w-auto"><QrCode className="mr-2 h-4 w-4" />Scan QR</Button></Link>
       </div>
       {isLoading ? <TableSkeleton /> : (
         <DataTable columns={equipmentColumns} data={data?.data ?? []} searchKey="name" searchPlaceholder="Search equipment..."

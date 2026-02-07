@@ -17,9 +17,9 @@ export default function SiteActivitiesPage({ params }: { params: Promise<{ siteI
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
         <div><h1 className="text-2xl font-bold">Activities</h1><p className="text-muted-foreground">All activities for this site</p></div>
-        <Link href={`/sites/${siteId}/activities/new`}><Button><Plus className="mr-2 h-4 w-4" />New Activity</Button></Link>
+        <Link href={`/sites/${siteId}/activities/new`}><Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Activity</Button></Link>
       </div>
       {isLoading ? <TableSkeleton /> : (
         <DataTable

@@ -110,3 +110,15 @@ export function useDeliverTransfer() {
     },
   });
 }
+
+export function useCancelTransfer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<ApiResponse<Transfer>>(`/transfers/${id}/cancel`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: transferKeys.all });
+    },
+  });
+}

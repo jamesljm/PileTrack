@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Activity, CheckSquare, Wrench } from "lucide-react";
+import { MapPin, Activity, CheckSquare, Wrench, Plus, QrCode, ArrowLeftRight } from "lucide-react";
 import { StatCard } from "@/components/cards/stat-card";
 import { ActivityCard } from "@/components/cards/activity-card";
 import { SiteCard } from "@/components/cards/site-card";
@@ -33,11 +33,33 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Overview of your construction operations</p>
       </div>
 
+      {/* Quick Actions */}
+      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
+        <Link href="/sites">
+          <Button variant="outline" className="w-full h-auto py-3 flex flex-col items-center gap-1">
+            <Plus className="h-5 w-5" />
+            <span className="text-xs">New Activity</span>
+          </Button>
+        </Link>
+        <Link href="/equipment/scan">
+          <Button variant="outline" className="w-full h-auto py-3 flex flex-col items-center gap-1">
+            <QrCode className="h-5 w-5" />
+            <span className="text-xs">Scan QR</span>
+          </Button>
+        </Link>
+        <Link href="/sites">
+          <Button variant="outline" className="w-full h-auto py-3 flex flex-col items-center gap-1">
+            <ArrowLeftRight className="h-5 w-5" />
+            <span className="text-xs">New Transfer</span>
+          </Button>
+        </Link>
+      </div>
+
       {/* Stats */}
       {sitesLoading ? (
         <CardsSkeleton count={4} />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon={MapPin} label="Total Sites" value={totalSites} />
           <StatCard icon={Activity} label="Activities Today" value={totalActivitiesToday} />
           <StatCard icon={CheckSquare} label="Pending Approvals" value={pendingApprovals} />

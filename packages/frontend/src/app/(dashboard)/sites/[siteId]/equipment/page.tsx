@@ -16,9 +16,9 @@ export default function SiteEquipmentPage({ params }: { params: Promise<{ siteId
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
         <div><h1 className="text-2xl font-bold">Site Equipment</h1><p className="text-muted-foreground">Equipment assigned to this site</p></div>
-        <Link href={`/sites/${siteId}/equipment/new`}><Button><Plus className="mr-2 h-4 w-4" />Add Equipment</Button></Link>
+        <Link href={`/sites/${siteId}/equipment/new`}><Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />Add Equipment</Button></Link>
       </div>
       {isLoading ? <TableSkeleton /> : (
         <DataTable columns={equipmentColumns} data={data?.data ?? []} searchKey="name" searchPlaceholder="Search equipment..."

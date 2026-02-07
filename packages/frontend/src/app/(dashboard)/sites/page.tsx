@@ -25,9 +25,9 @@ export default function SitesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
         <div><h1 className="text-2xl font-bold">Sites</h1><p className="text-muted-foreground">Manage your construction sites</p></div>
-        <Link href="/sites/new"><Button><Plus className="mr-2 h-4 w-4" />New Site</Button></Link>
+        <Link href="/sites/new"><Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />New Site</Button></Link>
       </div>
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -35,7 +35,7 @@ export default function SitesPage() {
           <Input placeholder="Search sites..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={status} onValueChange={(v) => setStatus(v === "all" ? "" : v)}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="ACTIVE">Active</SelectItem>

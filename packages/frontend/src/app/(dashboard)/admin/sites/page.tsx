@@ -193,7 +193,7 @@ export default function AdminSitesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Site Management</h1>
           <p className="text-muted-foreground">
@@ -208,7 +208,7 @@ export default function AdminSitesPage() {
               New Site
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Site</DialogTitle>
               <DialogDescription>

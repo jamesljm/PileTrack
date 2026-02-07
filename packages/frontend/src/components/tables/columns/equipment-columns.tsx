@@ -56,6 +56,22 @@ export const equipmentColumns: ColumnDef<Equipment>[] = [
     filterFn: (row, id, value) => value === row.getValue(id),
   },
   {
+    id: "site",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Site" />
+    ),
+    cell: ({ row }) => {
+      const site = (row.original as any).site as { id: string; name: string; code: string } | null;
+      return site ? (
+        <Link href={`/sites/${site.id}`} className="text-primary hover:underline">
+          {site.name}
+        </Link>
+      ) : (
+        <span className="text-muted-foreground">Unassigned</span>
+      );
+    },
+  },
+  {
     accessorKey: "manufacturer",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Manufacturer" />

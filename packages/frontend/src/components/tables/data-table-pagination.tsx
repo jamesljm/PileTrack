@@ -29,8 +29,8 @@ export function DataTablePagination<TData>({
         {table.getFilteredSelectedRowModel().rows.length} of{" "}
         {table.getFilteredRowModel().rows.length} row(s) selected.
       </div>
-      <div className="flex items-center gap-6 lg:gap-8">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4 sm:gap-6 lg:gap-8">
+        <div className="hidden sm:flex items-center gap-2">
           <p className="text-sm font-medium">Rows per page</p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
@@ -66,7 +66,7 @@ export function DataTablePagination<TData>({
           </Button>
           <Button
             variant="outline"
-            className="h-8 w-8 p-0"
+            className="h-9 w-9 p-0 sm:h-8 sm:w-8"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
@@ -75,7 +75,7 @@ export function DataTablePagination<TData>({
           </Button>
           <Button
             variant="outline"
-            className="h-8 w-8 p-0"
+            className="h-9 w-9 p-0 sm:h-8 sm:w-8"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
