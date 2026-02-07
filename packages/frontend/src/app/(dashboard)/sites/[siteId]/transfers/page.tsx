@@ -52,7 +52,7 @@ function TransferMobileCard({ item, onAction }: { item: TransferWithItems; onAct
         <span className="text-xs text-muted-foreground">by {item.requestedByName}</span>
         <div className="flex items-center gap-1">
           <TransferActionButton transfer={item} onAction={onAction} />
-          <Link href={`/sites/${item.fromSiteId}/transfers?id=${item.id}`}>
+          <Link href={`/sites/${item.fromSiteId}/transfers/${item.id}`}>
             <Button variant="ghost" size="sm" className="h-7 px-2">
               <Eye className="h-3.5 w-3.5" />
             </Button>
@@ -194,7 +194,7 @@ export default function SiteTransfersPage({ params }: { params: Promise<{ siteId
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <TransferActionButton transfer={row.original} onAction={handleAction} />
-          <Link href={`/sites/${row.original.fromSiteId}/transfers?id=${row.original.id}`}>
+          <Link href={`/sites/${row.original.fromSiteId}/transfers/${row.original.id}`}>
             <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
           </Link>
         </div>

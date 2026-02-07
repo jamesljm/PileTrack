@@ -16,7 +16,7 @@ import {
 import { TableSkeleton } from "@/components/shared/loading-skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
-import { Plus, AlertTriangle, ChevronRight, Trash2, Loader2, MoreVertical } from "lucide-react";
+import { Plus, AlertTriangle, ChevronRight, Trash2, Loader2, MoreVertical, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -121,6 +121,12 @@ export default function SiteMaterialsPage({ params }: { params: Promise<{ siteId
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/sites/${siteId}/materials/${material.id}`}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
                 onClick={() => openDeleteDialog(material)}

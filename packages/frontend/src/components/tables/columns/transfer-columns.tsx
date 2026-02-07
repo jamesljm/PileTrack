@@ -63,7 +63,7 @@ export const transferColumns: ColumnDef<TransferWithItems>[] = [
       const transfer = row.original;
       return (
         <Link
-          href={`/sites/${transfer.fromSiteId}/transfers?id=${transfer.id}`}
+          href={`/sites/${transfer.fromSiteId}/transfers/${transfer.id}`}
         >
           <Button variant="ghost" size="sm">
             <Eye className="h-4 w-4 mr-1" />
