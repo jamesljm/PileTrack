@@ -22,6 +22,7 @@ interface EquipmentFilter {
   category?: string;
   status?: string;
   search?: string;
+  unassigned?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -109,6 +110,7 @@ export function useEquipment(filters: EquipmentFilter = {}) {
       if (filters.category) params.category = filters.category;
       if (filters.status) params.status = filters.status;
       if (filters.search) params.search = filters.search;
+      if (filters.unassigned) params.unassigned = "true";
       if (filters.page) params.page = String(filters.page);
       if (filters.pageSize) params.pageSize = String(filters.pageSize);
       return api.get<PaginatedResponse<Equipment>>("/equipment", params);

@@ -39,13 +39,16 @@ export default function NewTransferPage({ params }: { params: Promise<{ siteId: 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Link href={`/sites/${siteId}`}>
+        <Link href={`/sites/${siteId}/transfers`}>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
         <h1 className="text-lg md:text-2xl font-bold">New Transfer</h1>
       </div>
+      <p className="text-sm text-muted-foreground">
+        To transfer equipment <strong>to</strong> this site, change the &quot;From Site&quot; to the source and select this site as the destination.
+      </p>
       <TransferForm
         sites={sitesData?.data ?? []}
         equipment={equipmentData?.data ?? []}

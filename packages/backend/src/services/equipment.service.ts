@@ -53,6 +53,7 @@ class EquipmentService {
       category?: string;
       status?: string;
       siteId?: string;
+      unassigned?: boolean;
     },
     pagination: { skip: number; take: number },
   ): Promise<{ data: Equipment[]; total: number }> {

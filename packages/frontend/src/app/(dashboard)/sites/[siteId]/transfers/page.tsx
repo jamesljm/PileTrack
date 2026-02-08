@@ -1,10 +1,11 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useMemo } from "react";
 import { useTransfers, useApproveTransfer, useShipTransfer, useDeliverTransfer, useCancelTransfer } from "@/queries/use-transfers";
 import { DataTable } from "@/components/tables/data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TableSkeleton } from "@/components/shared/loading-skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header";
@@ -18,12 +19,24 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import Link from "next/link";
-import { Plus, Check, Truck, PackageCheck, X, Eye, Loader2, ArrowRight, Package } from "lucide-react";
+import { Plus, Check, Truck, PackageCheck, X, Eye, Loader2, ArrowRight, ArrowDownLeft, ArrowUpRight, Package } from "lucide-react";
 import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { TransferWithItems, TransferStatus } from "@piletrack/shared";
 
-function TransferMobileCard({ item, onAction }: { item: TransferWithItems; onAction: (id: string, action: string) => void }) {
+type Direction = "all" | "outgoing" | "incoming";
+
+function DirectionBadge({ transfer, siteId }: { transfer: TransferWithItems; siteId: string }) {
+  const isOutgoing = transfer.fromSiteId === siteId;
+  return (
+    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 gap-0.5 ${isOutgoing ? "text-orange-600 border-orange-300" : "text-blue-600 border-blue-300"}`}>
+      {isOutgoing ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
+      {isOutgoing ? "Out" : "In"}
+    </Badge>
+  );
+}
+
+function TransferMobileCard({ item, siteId, onAction }: { item: TransferWithItems; siteId: string; onAction: (id: string, action: string) => void }) {
   const statusColor = TRANSFER_STATUS_COLORS[item.status as keyof typeof TRANSFER_STATUS_COLORS] ?? "";
   const itemCount = item.items?.length ?? 0;
 
@@ -32,6 +45,7 @@ function TransferMobileCard({ item, onAction }: { item: TransferWithItems; onAct
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center gap-1.5 text-sm font-semibold">
+            <DirectionBadge transfer={item} siteId={siteId} />
             <span className="truncate">{item.fromSiteName}</span>
             <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <span className="truncate">{item.toSiteName}</span>
@@ -52,7 +66,7 @@ function TransferMobileCard({ item, onAction }: { item: TransferWithItems; onAct
         <span className="text-xs text-muted-foreground">by {item.requestedByName}</span>
         <div className="flex items-center gap-1">
           <TransferActionButton transfer={item} onAction={onAction} />
-          <Link href={`/sites/${item.fromSiteId}/transfers/${item.id}`}>
+          <Link href={`/sites/${siteId}/transfers/${item.id}`}>
             <Button variant="ghost" size="sm" className="h-7 px-2">
               <Eye className="h-3.5 w-3.5" />
             </Button>
@@ -105,10 +119,39 @@ function TransferActionButton({ transfer, onAction }: {
 
 export default function SiteTransfersPage({ params }: { params: Promise<{ siteId: string }> }) {
   const { siteId } = use(params);
-  const { data, isLoading } = useTransfers({ fromSiteId: siteId });
+  const [direction, setDirection] = useState<Direction>("all");
   const { toast } = useToast();
   const [confirmDialog, setConfirmDialog] = useState<{ id: string; action: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  const outgoingQuery = useTransfers({ fromSiteId: siteId });
+  const incomingQuery = useTransfers({ toSiteId: siteId });
+
+  const isLoading = outgoingQuery.isLoading || incomingQuery.isLoading;
+
+  const transfers = useMemo(() => {
+    const outgoing = (outgoingQuery.data?.data ?? []) as TransferWithItems[];
+    const incoming = (incomingQuery.data?.data ?? []) as TransferWithItems[];
+
+    switch (direction) {
+      case "outgoing":
+        return outgoing;
+      case "incoming":
+        return incoming;
+      case "all": {
+        const seen = new Set<string>();
+        const merged: TransferWithItems[] = [];
+        for (const t of [...outgoing, ...incoming]) {
+          if (!seen.has(t.id)) {
+            seen.add(t.id);
+            merged.push(t);
+          }
+        }
+        merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        return merged;
+      }
+    }
+  }, [direction, outgoingQuery.data, incomingQuery.data]);
 
   const approveMutation = useApproveTransfer();
   const shipMutation = useShipTransfer();
@@ -154,6 +197,12 @@ export default function SiteTransfersPage({ params }: { params: Promise<{ siteId
 
   const columns: ColumnDef<TransferWithItems>[] = [
     {
+      id: "direction",
+      header: "",
+      cell: ({ row }) => <DirectionBadge transfer={row.original} siteId={siteId} />,
+      size: 60,
+    },
+    {
       accessorKey: "createdAt",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
       cell: ({ row }) => format(new Date(row.getValue("createdAt")), "dd MMM yyyy"),
@@ -194,7 +243,7 @@ export default function SiteTransfersPage({ params }: { params: Promise<{ siteId
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <TransferActionButton transfer={row.original} onAction={handleAction} />
-          <Link href={`/sites/${row.original.fromSiteId}/transfers/${row.original.id}`}>
+          <Link href={`/sites/${siteId}/transfers/${row.original.id}`}>
             <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
           </Link>
         </div>
@@ -214,10 +263,19 @@ export default function SiteTransfersPage({ params }: { params: Promise<{ siteId
           </Button>
         </Link>
       </div>
+
+      <Tabs value={direction} onValueChange={(v) => setDirection(v as Direction)}>
+        <TabsList>
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="outgoing">Outgoing</TabsTrigger>
+          <TabsTrigger value="incoming">Incoming</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {isLoading ? <TableSkeleton /> : (
         <DataTable
           columns={columns}
-          data={(data?.data ?? []) as any}
+          data={transfers}
           searchKey="fromSiteName"
           searchPlaceholder="Search transfers..."
           filterOptions={[
@@ -236,6 +294,7 @@ export default function SiteTransfersPage({ params }: { params: Promise<{ siteId
           renderMobileCard={(item) => (
             <TransferMobileCard
               item={item as TransferWithItems}
+              siteId={siteId}
               onAction={handleAction}
             />
           )}

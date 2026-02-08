@@ -15,6 +15,7 @@ export class EquipmentController {
         category: req.query.category as string | undefined,
         status: req.query.status as string | undefined,
         siteId: req.query.siteId as string | undefined,
+        unassigned: req.query.unassigned === "true",
       };
 
       const { data, total } = await equipmentService.getEquipment(filter, pagination);

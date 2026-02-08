@@ -105,6 +105,7 @@ class EquipmentRepository extends BaseRepository<Equipment> {
       category?: string;
       status?: string;
       siteId?: string;
+      unassigned?: boolean;
     },
     pagination: { skip: number; take: number },
   ): Promise<{ data: Equipment[]; total: number }> {
@@ -112,7 +113,9 @@ class EquipmentRepository extends BaseRepository<Equipment> {
       deletedAt: null,
     };
 
-    if (filter.siteId) {
+    if (filter.unassigned) {
+      where.siteId = null;
+    } else if (filter.siteId) {
       where.siteId = filter.siteId;
     }
 
