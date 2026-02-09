@@ -27,6 +27,8 @@ RUN addgroup --system --gid 1001 appgroup && adduser --system --uid 1001 appuser
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/dist ./dist
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/prisma ./prisma
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/node_modules ./node_modules
+COPY --from=builder --chown=appuser:appgroup /app/node_modules/.pnpm/prisma@*/node_modules/prisma ./node_modules/prisma
+COPY --from=builder --chown=appuser:appgroup /app/node_modules/.pnpm/@prisma+engines@*/node_modules/@prisma/engines ./node_modules/@prisma/engines
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/package.json ./
 USER appuser
 EXPOSE 3001

@@ -23,12 +23,13 @@ WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 appgroup && adduser --system --uid 1001 appuser
 
-COPY --from=builder /app/packages/frontend/public ./public
+# Standalone output preserves monorepo structure: standalone/packages/frontend/server.js
 COPY --from=builder --chown=appuser:appgroup /app/packages/frontend/.next/standalone ./
-COPY --from=builder --chown=appuser:appgroup /app/packages/frontend/.next/static ./.next/static
+COPY --from=builder --chown=appuser:appgroup /app/packages/frontend/.next/static ./packages/frontend/.next/static
+COPY --from=builder /app/packages/frontend/public ./packages/frontend/public
 
 USER appuser
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-CMD ["node", "server.js"]
+CMD ["node", "packages/frontend/server.js"]
