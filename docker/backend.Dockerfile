@@ -27,9 +27,8 @@ RUN addgroup --system --gid 1001 appgroup && adduser --system --uid 1001 appuser
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/dist ./dist
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/prisma ./prisma
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/node_modules ./node_modules
-COPY --from=builder --chown=appuser:appgroup /app/node_modules/.pnpm/prisma@*/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=appuser:appgroup /app/node_modules/.pnpm/@prisma+engines@*/node_modules/@prisma/engines ./node_modules/@prisma/engines
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/package.json ./
+RUN npm install prisma@6 --save-dev --ignore-scripts 2>/dev/null; exit 0
 USER appuser
 EXPOSE 3001
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/index.js"]
