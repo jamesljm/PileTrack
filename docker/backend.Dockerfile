@@ -10,6 +10,7 @@ COPY packages/shared/package.json ./packages/shared/
 RUN pnpm install --frozen-lockfile --filter @piletrack/backend --filter @piletrack/shared
 
 FROM base AS builder
+ARG CACHEBUST=1
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/backend/node_modules ./packages/backend/node_modules
