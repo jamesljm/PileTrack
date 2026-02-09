@@ -23,8 +23,7 @@ COPY --from=builder --chown=appuser:appgroup /app/packages/backend/node_modules 
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/dist ./packages/backend/dist
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/prisma ./packages/backend/prisma
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/package.json ./packages/backend/package.json
-COPY --from=builder --chown=appuser:appgroup /app/packages/shared/dist ./packages/shared/dist
-COPY --from=builder --chown=appuser:appgroup /app/packages/shared/package.json ./packages/shared/package.json
+COPY --from=builder --chown=appuser:appgroup /app/packages/shared ./packages/shared
 COPY --from=builder --chown=appuser:appgroup /app/package.json ./package.json
 COPY --from=builder --chown=appuser:appgroup /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 USER appuser
