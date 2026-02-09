@@ -20,7 +20,9 @@ RUN pnpm --filter @piletrack/shared build
 RUN pnpm --filter @piletrack/backend db:generate
 RUN pnpm --filter @piletrack/backend build
 # Copy prisma CLI into backend node_modules so it's available in runner
-RUN cp -rL node_modules/prisma packages/backend/node_modules/prisma
+# pnpm stores it under .pnpm - find and copy it
+RUN PRISMA_DIR=$(find node_modules/.pnpm -type d -name "prisma" -path "*/node_modules/prisma" | head -1) && \
+    cp -r "$PRISMA_DIR" packages/backend/node_modules/prisma
 
 FROM node:20-alpine AS runner
 WORKDIR /app
