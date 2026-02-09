@@ -18,6 +18,8 @@ COPY . .
 RUN pnpm --filter @piletrack/shared build
 RUN pnpm --filter @piletrack/backend db:generate
 RUN pnpm --filter @piletrack/backend build
+# Copy prisma CLI into backend node_modules so it's available in runner
+RUN cp -rL node_modules/prisma packages/backend/node_modules/prisma
 
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -28,7 +30,6 @@ COPY --from=builder --chown=appuser:appgroup /app/packages/backend/dist ./dist
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/prisma ./prisma
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/node_modules ./node_modules
 COPY --from=builder --chown=appuser:appgroup /app/packages/backend/package.json ./
-RUN npm install prisma@6 --save-dev --ignore-scripts 2>/dev/null; exit 0
 USER appuser
 EXPOSE 3001
 CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/index.js"]
