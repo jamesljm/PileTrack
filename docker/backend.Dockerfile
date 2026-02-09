@@ -18,12 +18,6 @@ COPY . .
 RUN pnpm --filter @piletrack/shared build
 RUN pnpm --filter @piletrack/backend db:generate
 RUN pnpm --filter @piletrack/backend build
-# Run migration during build (needs DATABASE_URL at build time) - skip if not set
-# Copy prisma CLI binary for runtime migrations
-RUN PRISMA_SRC=$(find node_modules/.pnpm -maxdepth 4 -type d -name "prisma" -path "*/node_modules/prisma" | head -1) && \
-    mkdir -p packages/backend/node_modules/prisma && \
-    cp -a "$PRISMA_SRC/build" packages/backend/node_modules/prisma/build && \
-    cp -a "$PRISMA_SRC/package.json" packages/backend/node_modules/prisma/package.json
 
 FROM node:20-alpine AS runner
 WORKDIR /app
