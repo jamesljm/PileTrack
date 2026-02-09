@@ -1,7 +1,6 @@
 # Render Blueprint — PileTrack PWA
 # Deploy: https://render.com/deploy
 # Region: Singapore (singapore)
-# Frontend is deployed on Vercel — only backend API here
 
 services:
   # ─── Backend API ────────────────────────────────────────
@@ -33,6 +32,11 @@ services:
         fromDatabase:
           name: piletrack-db
           property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: piletrack-redis
+          type: redis
+          property: connectionString
       - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
@@ -42,16 +46,51 @@ services:
       - key: JWT_REFRESH_EXPIRES_IN
         value: 7d
       - key: CORS_ORIGINS
-        value: https://piletrack-web.vercel.app
+        sync: false # Set manually after frontend deploys
+      - key: SENTRY_DSN
+        sync: false
     autoDeploy: true
     branch: main
+
+  # ─── Frontend (Next.js PWA) ─────────────────────────────
+  - type: web
+    name: piletrack-web
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: |
+      corepack enable &&
+      pnpm install --frozen-lockfile --prod=false &&
+      pnpm --filter @piletrack/shared build &&
+      pnpm --filter @piletrack/frontend build
+    startCommand: cd packages/frontend && npx next start -H 0.0.0.0 -p $PORT
+    healthCheckPath: /login
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        sync: false # Set to https://piletrack-api.onrender.com/api/v1
+      - key: NEXT_PUBLIC_APP_NAME
+        value: PileTrack
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        sync: false
+    autoDeploy: true
+    branch: main
+
+  # ─── Redis ──────────────────────────────────────────────
+  - type: redis
+    name: piletrack-redis
+    region: singapore
+    plan: free
+    ipAllowList: [] # Only internal access
+    maxmemoryPolicy: allkeys-lru
 
 # ─── PostgreSQL Database ─────────────────────────────────
 databases:
   - name: piletrack-db
     region: singapore
-    plan: free
+    plan: basic-256mb
     databaseName: piletrack
     user: piletrack
-    ipAllowList: []
+    ipAllowList: [] # Only internal access
     postgresMajorVersion: "16"
