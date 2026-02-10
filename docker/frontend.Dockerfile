@@ -15,6 +15,8 @@ COPY --from=deps /app/packages/frontend/node_modules ./packages/frontend/node_mo
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 ENV DOCKER_BUILD=true
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN pnpm --filter @piletrack/shared build
 RUN pnpm --filter @piletrack/frontend build
 
