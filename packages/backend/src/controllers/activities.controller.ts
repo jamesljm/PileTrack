@@ -108,6 +108,7 @@ export class ActivitiesController {
       const activity = await activityService.submitForApproval(
         req.params.id!,
         req.user!.id,
+        req.user!.role,
       );
 
       const response: ApiResponse = {

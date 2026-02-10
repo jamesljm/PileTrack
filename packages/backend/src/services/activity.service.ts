@@ -336,7 +336,7 @@ class ActivityService {
     logger.info({ activityId: id }, "Activity soft-deleted");
   }
 
-  async submitForApproval(id: string, userId: string): Promise<ActivityRecord> {
+  async submitForApproval(id: string, userId: string, userRole?: string): Promise<ActivityRecord> {
     const existing = await activityRepository.findByIdWithRelations(id);
     if (!existing) {
       throw new NotFoundError("Activity record");
@@ -346,7 +346,7 @@ class ActivityService {
       throw new ValidationError("Only draft or rejected activities can be submitted for approval");
     }
 
-    if (existing.createdById !== userId) {
+    if (existing.createdById !== userId && userRole !== "ADMIN") {
       throw new ForbiddenError("Only the creator can submit this activity");
     }
 
