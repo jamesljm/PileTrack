@@ -83,9 +83,26 @@ export const useAuthStore = create<AuthState>((set) => ({
         data: AuthUser;
       }>("/auth/me");
       set({ user: response.data, isAuthenticated: true, isLoading: false });
-    } catch {
-      clearTokens();
-      set({ user: null, isAuthenticated: false, isLoading: false });
+    } catch (error: any) {
+      // Only clear tokens on 401 (invalid/expired token)
+      // For network errors (server restart, offline), keep tokens and use JWT payload
+      if (error?.status === 401) {
+        clearTokens();
+        set({ user: null, isAuthenticated: false, isLoading: false });
+      } else {
+        // Use basic user info from JWT payload as fallback
+        set({
+          user: {
+            id: payload.userId,
+            email: payload.email,
+            firstName: "",
+            lastName: "",
+            role: payload.role as UserRole,
+          },
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      }
     }
   },
 }));
